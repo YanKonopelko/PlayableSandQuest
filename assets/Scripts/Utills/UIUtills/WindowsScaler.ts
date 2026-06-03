@@ -3,6 +3,7 @@ import { UITransform } from "cc";
 import { view } from "cc";
 import { CustomAction } from "../CustomActions";
 import { Camera } from "cc";
+import { EDITOR_NOT_IN_PREVIEW } from "cc/env";
 const { ccclass, property, executeInEditMode } = _decorator;
 
 
@@ -17,6 +18,7 @@ export class WindowsScaler extends Component {
     @property(UITransform) private canvasTransform: UITransform = null;
     @property(Camera) private camera: Camera = null;
     @property(Number) private verticalRatio: number = 0.7;
+    @property(Size) private screenSize: Size = new Size(1080, 1920);
     private static instance: WindowsScaler = null;
 
     private lastWindowSize: Size = null;
@@ -66,6 +68,9 @@ export class WindowsScaler extends Component {
         var windowInnerWidth = camWidth;
         var windowInnerHeight = camHeight;
         let curWindowSize: Size = new Size(windowInnerWidth, windowInnerHeight);
+        if(EDITOR_NOT_IN_PREVIEW) {
+            curWindowSize = this.screenSize;
+        }
         if (!this.lastWindowSize || !this.EqualSize(curWindowSize, this.lastWindowSize)) {
             this.curRatio = curWindowSize.x / curWindowSize.y;
             this.orientation = this.curRatio < this.verticalRatio ? EOrientationType.Vertical : EOrientationType.Horizontal;
@@ -102,6 +107,10 @@ export class WindowsScaler extends Component {
         const frameSize = view.getFrameSize();
         const aspect = frameSize.width / frameSize.height;
         const camWidth = camHeight * aspect;
-        return new Size(camWidth, camHeight);
+        let size = new Size(camWidth, camHeight);
+          if(EDITOR_NOT_IN_PREVIEW) {
+            size = this.screenSize;
+        }
+        return size;
     }
 }
