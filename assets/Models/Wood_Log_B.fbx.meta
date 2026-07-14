@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "90234309-0a8e-490b-8168-72814bc21106",
+  "files": [],
+  "subMetas": {
+    "74b89": {
+      "importer": "gltf-mesh",
+      "uuid": "90234309-0a8e-490b-8168-72814bc21106@74b89",
+      "displayName": "",
+      "id": "74b89",
+      "name": "Wood_Log_B.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 580
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "37a70": {
+      "importer": "gltf-material",
+      "uuid": "90234309-0a8e-490b-8168-72814bc21106@37a70",
+      "displayName": "",
+      "id": "37a70",
+      "name": "resource.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "8c052": {
+      "importer": "gltf-scene",
+      "uuid": "90234309-0a8e-490b-8168-72814bc21106@8c052",
+      "displayName": "",
+      "id": "8c052",
+      "name": "Wood_Log_B.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "90234309-0a8e-490b-8168-72814bc21106@74b89"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "90234309-0a8e-490b-8168-72814bc21106@37a70"
+      ],
+      "scenes": [
+        "90234309-0a8e-490b-8168-72814bc21106@8c052"
+      ]
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    }
+  }
+}

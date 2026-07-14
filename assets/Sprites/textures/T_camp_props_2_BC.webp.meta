@@ -1,0 +1,46 @@
+{
+  "ver": "1.0.27",
+  "importer": "image",
+  "imported": true,
+  "uuid": "f6a44eff-e0ed-4044-b369-c6b79df56d73",
+  "files": [
+    ".json",
+    ".webp"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "f6a44eff-e0ed-4044-b369-c6b79df56d73@6c48a",
+      "displayName": "T_camp_props_2_BC",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "f6a44eff-e0ed-4044-b369-c6b79df56d73",
+        "visible": false
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "type": "texture",
+    "fixAlphaTransparencyArtifacts": false,
+    "hasAlpha": false,
+    "redirect": "f6a44eff-e0ed-4044-b369-c6b79df56d73@6c48a",
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "56V4ss5UBIQ6U8cATmVkk4"
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "66fda0be-8469-4493-9c16-128c684ef7ad",
+  "files": [],
+  "subMetas": {
+    "010f2": {
+      "importer": "gltf-mesh",
+      "uuid": "66fda0be-8469-4493-9c16-128c684ef7ad@010f2",
+      "displayName": "",
+      "id": "010f2",
+      "name": "wheel.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 2814
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "e1f69": {
+      "importer": "gltf-material",
+      "uuid": "66fda0be-8469-4493-9c16-128c684ef7ad@e1f69",
+      "displayName": "",
+      "id": "e1f69",
+      "name": "VRay_wood.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "e4e95": {
+      "importer": "gltf-scene",
+      "uuid": "66fda0be-8469-4493-9c16-128c684ef7ad@e4e95",
+      "displayName": "",
+      "id": "e4e95",
+      "name": "wheel.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "66fda0be-8469-4493-9c16-128c684ef7ad@010f2"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "66fda0be-8469-4493-9c16-128c684ef7ad@e1f69"
+      ],
+      "scenes": [
+        "66fda0be-8469-4493-9c16-128c684ef7ad@e4e95"
+      ]
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    }
+  }
+}

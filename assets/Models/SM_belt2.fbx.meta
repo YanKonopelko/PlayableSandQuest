@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "05d865d9-1af9-4685-a87e-29193a62d195",
+  "files": [],
+  "subMetas": {
+    "58f8c": {
+      "importer": "gltf-mesh",
+      "uuid": "05d865d9-1af9-4685-a87e-29193a62d195@58f8c",
+      "displayName": "",
+      "id": "58f8c",
+      "name": "SM_belt2.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 4032
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "02fba": {
+      "importer": "gltf-material",
+      "uuid": "05d865d9-1af9-4685-a87e-29193a62d195@02fba",
+      "displayName": "",
+      "id": "02fba",
+      "name": "Material_015.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "630c4": {
+      "importer": "gltf-scene",
+      "uuid": "05d865d9-1af9-4685-a87e-29193a62d195@630c4",
+      "displayName": "",
+      "id": "630c4",
+      "name": "SM_belt2.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "05d865d9-1af9-4685-a87e-29193a62d195@58f8c"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "05d865d9-1af9-4685-a87e-29193a62d195@02fba"
+      ],
+      "scenes": [
+        "05d865d9-1af9-4685-a87e-29193a62d195@630c4"
+      ]
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    }
+  }
+}

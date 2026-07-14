@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "be3b2e70-06a3-41a8-8722-6036d6bd5e61",
+  "files": [],
+  "subMetas": {
+    "ed6b5": {
+      "importer": "gltf-mesh",
+      "uuid": "be3b2e70-06a3-41a8-8722-6036d6bd5e61@ed6b5",
+      "displayName": "",
+      "id": "ed6b5",
+      "name": "rock_b_5_rock_B_5.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 234
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "e2e35": {
+      "importer": "gltf-material",
+      "uuid": "be3b2e70-06a3-41a8-8722-6036d6bd5e61@e2e35",
+      "displayName": "",
+      "id": "e2e35",
+      "name": "rocks_B.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "2e37b": {
+      "importer": "gltf-scene",
+      "uuid": "be3b2e70-06a3-41a8-8722-6036d6bd5e61@2e37b",
+      "displayName": "",
+      "id": "2e37b",
+      "name": "rock_b_5_rock_B_5.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "be3b2e70-06a3-41a8-8722-6036d6bd5e61@ed6b5"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "be3b2e70-06a3-41a8-8722-6036d6bd5e61@e2e35"
+      ],
+      "scenes": [
+        "be3b2e70-06a3-41a8-8722-6036d6bd5e61@2e37b"
+      ]
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    }
+  }
+}

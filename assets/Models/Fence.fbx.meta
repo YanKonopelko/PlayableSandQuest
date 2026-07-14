@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "092ef3cf-9179-4786-92a1-ac05d4fb4c15",
+  "files": [],
+  "subMetas": {
+    "6bf3c": {
+      "importer": "gltf-mesh",
+      "uuid": "092ef3cf-9179-4786-92a1-ac05d4fb4c15@6bf3c",
+      "displayName": "",
+      "id": "6bf3c",
+      "name": "Fence.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 92
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "b40ce": {
+      "importer": "gltf-material",
+      "uuid": "092ef3cf-9179-4786-92a1-ac05d4fb4c15@b40ce",
+      "displayName": "",
+      "id": "b40ce",
+      "name": "Fence_wooden.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "75a22": {
+      "importer": "gltf-scene",
+      "uuid": "092ef3cf-9179-4786-92a1-ac05d4fb4c15@75a22",
+      "displayName": "",
+      "id": "75a22",
+      "name": "Fence.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "092ef3cf-9179-4786-92a1-ac05d4fb4c15@6bf3c"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "092ef3cf-9179-4786-92a1-ac05d4fb4c15@b40ce"
+      ],
+      "scenes": [
+        "092ef3cf-9179-4786-92a1-ac05d4fb4c15@75a22"
+      ]
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    }
+  }
+}

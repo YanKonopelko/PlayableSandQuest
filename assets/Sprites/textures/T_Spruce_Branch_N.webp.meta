@@ -1,0 +1,46 @@
+{
+  "ver": "1.0.27",
+  "importer": "image",
+  "imported": true,
+  "uuid": "f11599a9-f217-4be9-abf2-c48e4be00275",
+  "files": [
+    ".json",
+    ".webp"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "f11599a9-f217-4be9-abf2-c48e4be00275@6c48a",
+      "displayName": "T_Spruce_Branch_N",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "f11599a9-f217-4be9-abf2-c48e4be00275",
+        "visible": false
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "type": "texture",
+    "fixAlphaTransparencyArtifacts": false,
+    "hasAlpha": false,
+    "redirect": "f11599a9-f217-4be9-abf2-c48e4be00275@6c48a",
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "56V4ss5UBIQ6U8cATmVkk4"
+    }
+  }
+}

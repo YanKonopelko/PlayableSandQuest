@@ -1,0 +1,267 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c",
+  "files": [
+    "__original-animation-0.bin",
+    "__original-animation-1.bin"
+  ],
+  "subMetas": {
+    "29478": {
+      "importer": "gltf-material",
+      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@29478",
+      "displayName": "",
+      "id": "29478",
+      "name": "ORCLIME.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "08389": {
+      "importer": "gltf-mesh",
+      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@08389",
+      "displayName": "",
+      "id": "08389",
+      "name": "Walking__6_.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 2794
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "88ba0": {
+      "importer": "gltf-animation",
+      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@88ba0",
+      "displayName": "",
+      "id": "88ba0",
+      "name": "ц.animation",
+      "userData": {
+        "gltfIndex": 0,
+        "wrapMode": 2,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 0.7333333492279053
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
+    "a481c": {
+      "importer": "gltf-animation",
+      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@a481c",
+      "displayName": "",
+      "id": "a481c",
+      "name": "run.animation",
+      "userData": {
+        "gltfIndex": 1,
+        "wrapMode": 2,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 1
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
+    "438fe": {
+      "importer": "gltf-skeleton",
+      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@438fe",
+      "displayName": "",
+      "id": "438fe",
+      "name": "UnnamedSkeleton.skeleton",
+      "userData": {
+        "gltfIndex": 0,
+        "jointsLength": 57
+      },
+      "ver": "1.0.1",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "8cf93": {
+      "importer": "gltf-scene",
+      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@8cf93",
+      "displayName": "",
+      "id": "8cf93",
+      "name": "Orc.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "animationImportSettings": [
+      {
+        "name": "Running_Unreal_Take",
+        "duration": 0.7333333492279053,
+        "fps": 30,
+        "splits": [
+          {
+            "name": "ц",
+            "from": 0,
+            "to": 0.7333333492279053,
+            "wrapMode": 2,
+            "previousId": "88ba0"
+          }
+        ]
+      },
+      {
+        "name": "Wheelbarrow_Walk_Unreal_Take",
+        "duration": 1,
+        "fps": 30,
+        "splits": [
+          {
+            "name": "run",
+            "from": 0,
+            "to": 1,
+            "wrapMode": 2,
+            "previousId": "a481c"
+          }
+        ]
+      }
+    ],
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@08389"
+      ],
+      "skeletons": [
+        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@438fe"
+      ],
+      "textures": [],
+      "materials": [
+        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@29478"
+      ],
+      "scenes": [
+        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@8cf93"
+      ]
+    },
+    "materials": {
+      "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@29478": {
+        "__type__": "cc.Material",
+        "_name": "",
+        "_objFlags": 0,
+        "__editorExtras__": {},
+        "_native": "",
+        "_effectAsset": {
+          "__uuid__": "a3cd009f-0ab0-420d-9278-b9fdab939bbc",
+          "__expectedType__": "cc.EffectAsset"
+        },
+        "_techIdx": 0,
+        "_defines": [
+          {
+            "USE_TEXTURE": true
+          },
+          {},
+          {}
+        ],
+        "_states": [
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          },
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          },
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          }
+        ],
+        "_props": [
+          {
+            "mainTexture": {
+              "__uuid__": "95987316-d942-4474-88a2-6e7773ba00ee@6c48a",
+              "__expectedType__": "cc.Texture2D"
+            }
+          },
+          {},
+          {}
+        ]
+      }
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true,
+      "quantize": false,
+      "encode": false
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.35
+    },
+    "meshOptimize": {
+      "enable": true
+    }
+  }
+}

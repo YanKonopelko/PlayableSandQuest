@@ -1,0 +1,91 @@
+{
+  "__type__": "cc.Material",
+  "_name": "",
+  "_objFlags": 0,
+  "__editorExtras__": {},
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "48dd6906-2d25-495d-8147-cb6d24ff2dd0",
+    "__expectedType__": "cc.EffectAsset"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {}
+  ],
+  "_states": [
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    }
+  ],
+  "_props": [
+    {
+      "maskTexture": {
+        "__uuid__": "b078dcad-656d-4ba3-b76e-70c88e63e045@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "blendSmoothness": 0.04,
+      "texLayer1_Base": {
+        "__uuid__": "569004ef-4402-4ad2-a5c1-47698ff45293@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "texLayer1_Detail": {
+        "__uuid__": "7b8c7ded-eff1-424f-a7e1-9b8b7e02b0cc@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "colorLayer1": {
+        "__type__": "cc.Color",
+        "r": 253,
+        "g": 210,
+        "b": 149,
+        "a": 255
+      },
+      "tilingLayer1": {
+        "__type__": "cc.Vec4",
+        "x": 12,
+        "y": 12,
+        "z": 0,
+        "w": 0
+      },
+      "detailStrength1": 5,
+      "contrast1": 1.03,
+      "texLayer2_Base": {
+        "__uuid__": "c6edf54e-ec19-4252-b8c7-1cfdf9f46b88@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "texLayer2_Detail": {
+        "__uuid__": "7b8c7ded-eff1-424f-a7e1-9b8b7e02b0cc@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
+      "colorLayer2": {
+        "__type__": "cc.Color",
+        "r": 135,
+        "g": 199,
+        "b": 53,
+        "a": 255
+      },
+      "tilingLayer2": {
+        "__type__": "cc.Vec4",
+        "x": 26.6,
+        "y": 24.7,
+        "z": 0,
+        "w": 0
+      },
+      "detailStrength2": 2.8,
+      "contrast2": 2,
+      "emissiveColor": {
+        "__type__": "cc.Color",
+        "r": 252,
+        "g": 171,
+        "b": 0,
+        "a": 255
+      },
+      "emissiveIntensity": 0.2
+    }
+  ]
+}

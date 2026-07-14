@@ -1,0 +1,97 @@
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: legacy/main-functions/general-vs:vert
+      frag: unlit-fs:frag
+      properties: &props
+        mainColor:       { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+        maskTexture:     { value: white }
+        blendSmoothness: { value: 0.1, editor: { range:[0.01, 0.5, 0.01], slide: true } }
+        
+        # --- СЛОЙ 1 ---
+        texLayer1_Base:    { value: white }
+        texLayer1_Detail:  { value: white }
+        colorLayer1:       { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+        tilingLayer1:      { value: [1.0, 1.0, 1.0, 1.0] }
+        detailStrength1:   { value: 1.0, editor: { range:[0, 5, 0.1], slide: true } }
+        contrast1:         { value: 1.0, editor: { range:[0, 2, 0.01], slide: true } } # Контраст 1
+
+        # --- СЛОЙ 2 ---
+        texLayer2_Base:    { value: white }
+        texLayer2_Detail:  { value: white }
+        colorLayer2:       { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+        tilingLayer2:      { value: [1.0, 1.0, 1.0, 1.0] }
+        detailStrength2:   { value: 1.0, editor: { range:[0, 5, 0.1], slide: true } }
+        contrast2:         { value: 1.0, editor: { range:[0, 2, 0.01], slide: true } } # Контраст 2
+
+        emissiveColor:     { value: [1.0, 0.2, 0.0, 1.0], editor: { type: color } }
+        emissiveIntensity: { value: 0.0, editor: { range:[0, 10, 0.1], slide: true } }
+}%
+
+CCProgram unlit-fs %{
+  precision highp float;
+  #include <legacy/output>
+  #include <legacy/fog-fs>
+
+  in vec2 v_uv;
+  in vec3 v_position;
+
+  uniform sampler2D maskTexture;
+  uniform sampler2D texLayer1_Base;
+  uniform sampler2D texLayer1_Detail;
+  uniform sampler2D texLayer2_Base;
+  uniform sampler2D texLayer2_Detail;
+
+  uniform Constant {
+    vec4 mainColor;
+    vec4 emissiveColor;
+    vec4 colorLayer1;
+    vec4 colorLayer2;
+    vec4 tilingLayer1;
+    vec4 tilingLayer2;
+    float detailStrength1;
+    float detailStrength2;
+    float contrast1;
+    float contrast2;
+    float emissiveIntensity;
+    float blendSmoothness;
+  };
+
+  // Функция для изменения контраста
+  vec3 applyContrast(vec3 color, float contrast) {
+    return (color - 0.5) * contrast + 0.5;
+  }
+
+  vec4 frag () {
+    float mask = texture(maskTexture, v_uv).r;
+
+    // --- ОБРАБОТКА СЛОЯ 1 ---
+    vec4 base1 = texture(texLayer1_Base, v_uv * tilingLayer1.xy);
+    vec4 det1  = texture(texLayer1_Detail, v_uv * tilingLayer1.zw);
+    vec3 det1_final = pow(det1.rgb, vec3(1.0 / max(detailStrength1, 0.01)));
+    
+    vec4 layer1 = base1 * vec4(det1_final, 1.0) * colorLayer1;
+    // Применяем контраст к готовому слою 1
+    layer1.rgb = applyContrast(layer1.rgb, contrast1);
+
+    // --- ОБРАБОТКА СЛОЯ 2 ---
+    vec4 base2 = texture(texLayer2_Base, v_uv * tilingLayer2.xy);
+    vec4 det2  = texture(texLayer2_Detail, v_uv * tilingLayer2.zw);
+    vec3 det2_final = pow(det2.rgb, vec3(1.0 / max(detailStrength2, 0.01)));
+    
+    vec4 layer2 = base2 * vec4(det2_final, 1.0) * colorLayer2;
+    // Применяем контраст к готовому слою 2
+    layer2.rgb = applyContrast(layer2.rgb, contrast2);
+
+    // Смешивание
+    float factor = smoothstep(0.5 - blendSmoothness, 0.5 + blendSmoothness, mask);
+    vec4 finalCol = mix(layer1, layer2, factor);
+
+    finalCol *= mainColor;
+    finalCol.rgb += emissiveColor.rgb * emissiveIntensity;
+
+    CC_APPLY_FOG(finalCol, v_position);
+    return CCFragOutput(finalCol);
+  }
+}%

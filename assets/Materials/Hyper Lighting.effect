@@ -1,0 +1,67 @@
+// Effect Syntax Guide: https://docs.cocos.com/creator/manual/zh/shader/index.html
+
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: legacy/main-functions/general-vs:vert # builtin header
+      frag: unlit-fs:frag
+      properties: &props
+        lightDirection:    { value: [0.25, 1.0, -0.25, 1.0] }
+        brightness:      { value: 0.5, editor: {range:[0, 1, 0.01], slide:  true } }
+        shadow:      { value: 0.5, editor: {range:[0, 1, 0.01], slide:  true } }
+        mainTexture:    { value: white }
+        mainTiling:    { value: [1.0, 1.0] }
+        mainOffset:    { value: [0.0, 0.0] }
+        mainColor:      { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+  - name: transparent
+    passes:
+    - vert: legacy/main-functions/general-vs:vert # builtin header
+      frag: unlit-fs:frag
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties: *props
+}%
+
+CCProgram unlit-fs %{
+  precision highp float;
+  #include <legacy/output>
+  #include <legacy/fog-fs>
+
+  in vec2 v_uv;
+  in vec3 v_position;
+  in vec3 v_normal;
+
+  uniform sampler2D mainTexture;
+
+  uniform Constant {
+    vec2 mainTiling;
+    vec2 mainOffset;
+    vec4 mainColor;
+    vec4 lightDirection;
+    float brightness;
+    float shadow;
+  };
+
+  float lerp(float a, float b, float t) { return (1.0 - t) * a + t * b; }
+
+  vec4 frag () {
+    vec2 uv = v_uv * mainTiling.xy + mainOffset.xy;
+    vec4 col = mainColor * texture(mainTexture, uv);
+    vec3 th = normalize(vec3(lightDirection.x, lightDirection.y, lightDirection.z));
+    float lightVal = dot (v_normal, th);
+    col.rgb = col.rgb * vec3(mainColor.r + lightVal * brightness, mainColor.g + lightVal * brightness, mainColor.b + lightVal * brightness);
+
+    float maximum = max(lerp(1.5, 0.0, shadow), lightVal) + lightVal * brightness;
+
+    col.rgb = col.rgb * vec3(mainColor.r * maximum, mainColor.g * maximum, mainColor.b * maximum);
+    
+    CC_APPLY_FOG(col, v_position);
+    return CCFragOutput(col);
+  }
+}%

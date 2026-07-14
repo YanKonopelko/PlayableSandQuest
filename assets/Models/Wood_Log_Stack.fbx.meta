@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "afb5c5e6-426d-4288-8b9e-313bd43bb354",
+  "files": [],
+  "subMetas": {
+    "5499f": {
+      "importer": "gltf-mesh",
+      "uuid": "afb5c5e6-426d-4288-8b9e-313bd43bb354@5499f",
+      "displayName": "",
+      "id": "5499f",
+      "name": "Wood_Log_Stack.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 3576
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "37a70": {
+      "importer": "gltf-material",
+      "uuid": "afb5c5e6-426d-4288-8b9e-313bd43bb354@37a70",
+      "displayName": "",
+      "id": "37a70",
+      "name": "resource.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "461a9": {
+      "importer": "gltf-scene",
+      "uuid": "afb5c5e6-426d-4288-8b9e-313bd43bb354@461a9",
+      "displayName": "",
+      "id": "461a9",
+      "name": "Wood_Log_Stack.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "afb5c5e6-426d-4288-8b9e-313bd43bb354@5499f"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "afb5c5e6-426d-4288-8b9e-313bd43bb354@37a70"
+      ],
+      "scenes": [
+        "afb5c5e6-426d-4288-8b9e-313bd43bb354@461a9"
+      ]
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    }
+  }
+}

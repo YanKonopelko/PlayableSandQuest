@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "e278d448-632a-443f-b795-aa0872956fdf",
+  "files": [],
+  "subMetas": {
+    "a84bd": {
+      "importer": "gltf-mesh",
+      "uuid": "e278d448-632a-443f-b795-aa0872956fdf@a84bd",
+      "displayName": "",
+      "id": "a84bd",
+      "name": "cart.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 1844
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "138bb": {
+      "importer": "gltf-material",
+      "uuid": "e278d448-632a-443f-b795-aa0872956fdf@138bb",
+      "displayName": "",
+      "id": "138bb",
+      "name": "VRay_wood_albedo_Mat.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "3ccb6": {
+      "importer": "gltf-scene",
+      "uuid": "e278d448-632a-443f-b795-aa0872956fdf@3ccb6",
+      "displayName": "",
+      "id": "3ccb6",
+      "name": "cart.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "e278d448-632a-443f-b795-aa0872956fdf@a84bd"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "e278d448-632a-443f-b795-aa0872956fdf@138bb"
+      ],
+      "scenes": [
+        "e278d448-632a-443f-b795-aa0872956fdf@3ccb6"
+      ]
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "compress": true,
+      "enable": true
+    }
+  }
+}

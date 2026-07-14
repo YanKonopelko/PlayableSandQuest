@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "a9d289b0-857b-49cc-9a93-b2e4c3b92f18",
+  "files": [],
+  "subMetas": {
+    "5c2b3": {
+      "importer": "gltf-mesh",
+      "uuid": "a9d289b0-857b-49cc-9a93-b2e4c3b92f18@5c2b3",
+      "displayName": "",
+      "id": "5c2b3",
+      "name": "goldnugget.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 614
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "f7779": {
+      "importer": "gltf-material",
+      "uuid": "a9d289b0-857b-49cc-9a93-b2e4c3b92f18@f7779",
+      "displayName": "",
+      "id": "f7779",
+      "name": "UnnamedMaterial.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "e0c3c": {
+      "importer": "gltf-scene",
+      "uuid": "a9d289b0-857b-49cc-9a93-b2e4c3b92f18@e0c3c",
+      "displayName": "",
+      "id": "e0c3c",
+      "name": "goldnugget.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "a9d289b0-857b-49cc-9a93-b2e4c3b92f18@5c2b3"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "a9d289b0-857b-49cc-9a93-b2e4c3b92f18@f7779"
+      ],
+      "scenes": [
+        "a9d289b0-857b-49cc-9a93-b2e4c3b92f18@e0c3c"
+      ]
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshOptimize": {
+      "enable": true
+    }
+  }
+}

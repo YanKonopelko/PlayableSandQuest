@@ -1,0 +1,124 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "149cf503-3eba-4cfb-9388-340dde03f91e",
+  "files": [],
+  "subMetas": {
+    "bbd6c": {
+      "importer": "gltf-mesh",
+      "uuid": "149cf503-3eba-4cfb-9388-340dde03f91e@bbd6c",
+      "displayName": "",
+      "id": "bbd6c",
+      "name": "g5.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 792
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "c9388": {
+      "importer": "gltf-material",
+      "uuid": "149cf503-3eba-4cfb-9388-340dde03f91e@c9388",
+      "displayName": "",
+      "id": "c9388",
+      "name": "M_RockSmall.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "8d883": {
+      "importer": "gltf-material",
+      "uuid": "149cf503-3eba-4cfb-9388-340dde03f91e@8d883",
+      "displayName": "",
+      "id": "8d883",
+      "name": "lambert1.material",
+      "userData": {
+        "gltfIndex": 1
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "28d1b": {
+      "importer": "gltf-scene",
+      "uuid": "149cf503-3eba-4cfb-9388-340dde03f91e@28d1b",
+      "displayName": "",
+      "id": "28d1b",
+      "name": "g5.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "149cf503-3eba-4cfb-9388-340dde03f91e@bbd6c"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "149cf503-3eba-4cfb-9388-340dde03f91e@c9388",
+        "149cf503-3eba-4cfb-9388-340dde03f91e@8d883"
+      ],
+      "scenes": [
+        "149cf503-3eba-4cfb-9388-340dde03f91e@28d1b"
+      ]
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.4
+    },
+    "meshOptimize": {
+      "enable": true
+    }
+  }
+}

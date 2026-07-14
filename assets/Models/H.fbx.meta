@@ -1,0 +1,107 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "66ebc8e2-6af4-4a2c-989b-33c9a9159bf8",
+  "files": [],
+  "subMetas": {
+    "eebc5": {
+      "importer": "gltf-mesh",
+      "uuid": "66ebc8e2-6af4-4a2c-989b-33c9a9159bf8@eebc5",
+      "displayName": "",
+      "id": "eebc5",
+      "name": "H.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 12153
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "38cf2": {
+      "importer": "gltf-material",
+      "uuid": "66ebc8e2-6af4-4a2c-989b-33c9a9159bf8@38cf2",
+      "displayName": "",
+      "id": "38cf2",
+      "name": "proto_orc_rts.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "3f2dc": {
+      "importer": "gltf-scene",
+      "uuid": "66ebc8e2-6af4-4a2c-989b-33c9a9159bf8@3f2dc",
+      "displayName": "",
+      "id": "3f2dc",
+      "name": "H.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "66ebc8e2-6af4-4a2c-989b-33c9a9159bf8@eebc5"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "66ebc8e2-6af4-4a2c-989b-33c9a9159bf8@38cf2"
+      ],
+      "scenes": [
+        "66ebc8e2-6af4-4a2c-989b-33c9a9159bf8@3f2dc"
+      ]
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.48
+    },
+    "meshOptimize": {
+      "enable": true
+    }
+  }
+}

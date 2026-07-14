@@ -1,0 +1,211 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "d3f280b2-2954-4310-a30b-bb79908b0782",
+  "files": [],
+  "subMetas": {
+    "dcee5": {
+      "importer": "gltf-mesh",
+      "uuid": "d3f280b2-2954-4310-a30b-bb79908b0782@dcee5",
+      "displayName": "",
+      "id": "dcee5",
+      "name": "spruce_01_Spruce_1_LOD0.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "lodLevel": 0,
+        "triangleCount": 984
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "4c109": {
+      "importer": "gltf-material",
+      "uuid": "d3f280b2-2954-4310-a30b-bb79908b0782@4c109",
+      "displayName": "",
+      "id": "4c109",
+      "name": "SpruceTrunk.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "3e52f": {
+      "importer": "gltf-material",
+      "uuid": "d3f280b2-2954-4310-a30b-bb79908b0782@3e52f",
+      "displayName": "",
+      "id": "3e52f",
+      "name": "SpruceBranch.material",
+      "userData": {
+        "gltfIndex": 1
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "84df3": {
+      "importer": "gltf-scene",
+      "uuid": "d3f280b2-2954-4310-a30b-bb79908b0782@84df3",
+      "displayName": "",
+      "id": "84df3",
+      "name": "spruce_01_Spruce_1_LOD0_exported.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": true,
+      "hasBuiltinLOD": true,
+      "options": [
+        {
+          "screenRatio": 0.01,
+          "faceCount": 1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "d3f280b2-2954-4310-a30b-bb79908b0782@dcee5"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "d3f280b2-2954-4310-a30b-bb79908b0782@4c109",
+        "d3f280b2-2954-4310-a30b-bb79908b0782@3e52f"
+      ],
+      "scenes": [
+        "d3f280b2-2954-4310-a30b-bb79908b0782@84df3"
+      ]
+    },
+    "materials": {
+      "d3f280b2-2954-4310-a30b-bb79908b0782@4c109": {
+        "__type__": "cc.Material",
+        "_name": "",
+        "_objFlags": 0,
+        "__editorExtras__": {},
+        "_native": "",
+        "_effectAsset": {
+          "__uuid__": "c8f66d17-351a-48da-a12c-0212d28575c4",
+          "__expectedType__": "cc.EffectAsset"
+        },
+        "_techIdx": 0,
+        "_defines": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ],
+        "_states": [
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          },
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          },
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          },
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          },
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          },
+          {
+            "rasterizerState": {},
+            "depthStencilState": {},
+            "blendState": {
+              "targets": [
+                {}
+              ]
+            }
+          }
+        ],
+        "_props": [
+          {
+            "mainColor": {
+              "__type__": "cc.Color",
+              "r": 226,
+              "g": 226,
+              "b": 226,
+              "a": 255
+            }
+          },
+          {},
+          {},
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.6
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true
+    }
+  }
+}
