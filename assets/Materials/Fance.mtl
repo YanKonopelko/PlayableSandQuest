@@ -5,14 +5,36 @@
   "__editorExtras__": {},
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "b2b556a2-6404-4381-8716-ed347058b3af",
+    "__uuid__": "a3cd009f-0ab0-420d-9278-b9fdab939bbc",
     "__expectedType__": "cc.EffectAsset"
   },
   "_techIdx": 0,
   "_defines": [
+    {
+      "USE_TEXTURE": true
+    },
+    {},
     {}
   ],
   "_states": [
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
+    {
+      "rasterizerState": {},
+      "depthStencilState": {},
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    },
     {
       "rasterizerState": {},
       "depthStencilState": {},
@@ -28,24 +50,9 @@
       "mainTexture": {
         "__uuid__": "2ce55d61-f9ee-4db6-babf-a68474994608@6c48a",
         "__expectedType__": "cc.Texture2D"
-      },
-      "mainColor": {
-        "__type__": "cc.Color",
-        "r": 238,
-        "g": 215,
-        "b": 190,
-        "a": 255
-      },
-      "rampThreshold": 0.01,
-      "rampSmoothing": 0.001,
-      "emissiveAmount": 0.26,
-      "lightDirection": {
-        "__type__": "cc.Vec4",
-        "x": 0.25,
-        "y": 1,
-        "z": 0.25,
-        "w": 1
       }
-    }
+    },
+    {},
+    {}
   ]
 }

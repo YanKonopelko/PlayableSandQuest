@@ -29,13 +29,10 @@
       },
       {
         "__id__": 68
-      },
-      {
-        "__id__": 70
       }
     ],
     "_prefab": {
-      "__id__": 72
+      "__id__": 70
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -52,9 +49,9 @@
     },
     "_lscale": {
       "__type__": "cc.Vec3",
-      "x": 0.01,
-      "y": 0.01,
-      "z": 0.01
+      "x": 1,
+      "y": 1,
+      "z": 1
     },
     "_mobility": 0,
     "_layer": 1073741824,
@@ -1250,42 +1247,6 @@
     "nestedPrefabInstanceRoots": null
   },
   {
-    "__type__": "36b23YzVY5G/p6L6TEeGMP7",
-    "_name": "",
-    "_objFlags": 0,
-    "__editorExtras__": {},
-    "node": {
-      "__id__": 1
-    },
-    "_enabled": true,
-    "__prefab": {
-      "__id__": 67
-    },
-    "camera": null,
-    "targetCollider": {
-      "__id__": 68
-    },
-    "priceLabels": [
-      {
-        "__id__": 8
-      },
-      {
-        "__id__": 38
-      }
-    ],
-    "activeState": {
-      "__id__": 3
-    },
-    "inactiveState": {
-      "__id__": 33
-    },
-    "_id": ""
-  },
-  {
-    "__type__": "cc.CompPrefabInfo",
-    "fileId": "06C9Jx4fZINLELLE6uiKqJ"
-  },
-  {
     "__type__": "cc.BoxCollider",
     "_name": "",
     "_objFlags": 0,
@@ -1295,7 +1256,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 69
+      "__id__": 67
     },
     "_material": null,
     "_isTrigger": false,
@@ -1327,7 +1288,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 71
+      "__id__": 69
     },
     "playOnLoad": true,
     "_clips": [
