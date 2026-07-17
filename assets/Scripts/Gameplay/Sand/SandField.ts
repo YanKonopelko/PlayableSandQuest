@@ -5,6 +5,7 @@ import { PlayerController } from '../Player/PlayerController';
 import { RequiredReference } from '../Core/RequiredReference';
 import { SandVolumeSurface } from './SandVolumeSurface';
 import { CustomActionWithParam } from '../../Utills/CustomActions';
+import { SandOreAreaBuilder } from './SandOreAreaBuilder';
 
 const { ccclass, property } = _decorator;
 
@@ -28,17 +29,8 @@ export class SandField extends Component {
     @property(SandVolumeSurface)
     public surface: SandVolumeSurface | null = null;
 
-    @property(SandCollectableOre)
-    public ore1: SandCollectableOre | null = null;
-
-    @property(SandCollectableOre)
-    public ore2: SandCollectableOre | null = null;
-
-    @property(SandCollectableOre)
-    public ore3: SandCollectableOre | null = null;
-
-    @property(SandCollectableOre)
-    public ore4: SandCollectableOre | null = null;
+    @property(SandOreAreaBuilder)
+    public oreBuilder: SandOreAreaBuilder | null = null;
 
     @property({ type: CCFloat })
     public collectRadius: number = 0.8;
@@ -62,6 +54,11 @@ export class SandField extends Component {
         RequiredReference.CheckNode(this, this.playerRoot, 'playerRoot');
         RequiredReference.Check(this, this.playerController, 'playerController');
         RequiredReference.Check(this, this.surface, 'surface');
+        RequiredReference.Check(this, this.oreBuilder, 'oreBuilder');
+    }
+
+    protected start(): void {
+        this.oreBuilder?.RebuildNow();
     }
 
     protected onEnable(): void {
@@ -92,7 +89,7 @@ export class SandField extends Component {
     public CollectAt(worldPosition: Vec3): void {
         this.surface?.Erase(worldPosition, this.collectRadius);
 
-        for (const ore of [this.ore1, this.ore2, this.ore3, this.ore4]) {
+        for (const ore of this.GetOres()) {
             if (this.vacuumProbe) {
                 ore?.TryCollectFrom(this.vacuumProbe);
             }
@@ -102,7 +99,7 @@ export class SandField extends Component {
     public ResetField(): void {
         this.tickTimer = 0;
         this.surface?.ResetSurface();
-        for (const ore of [this.ore1, this.ore2, this.ore3, this.ore4]) {
+        for (const ore of this.GetOres()) {
             ore?.ResetOre();
         }
     }
@@ -143,5 +140,9 @@ export class SandField extends Component {
             current = current.parent;
         }
         return false;
+    }
+
+    private GetOres(): SandCollectableOre[] {
+        return this.oreBuilder?.GetOres() ?? [];
     }
 }

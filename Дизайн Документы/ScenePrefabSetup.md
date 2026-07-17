@@ -15,7 +15,7 @@
 - `GameplayStorage.prefab`
 - `GameplayShop.prefab`
 
-Для полей, которые MCP-сервер не умеет сериализовать как пустые массивы, используются фиксированные явные Inspector-ссылки (`queuePoint1..4`, `exitPoint1..3`, `ore1..4`, `finalVisualShop1..3`). Это сохраняет принцип отсутствия runtime fallback.
+Для полей, которые MCP-сервер не умеет сериализовать как пустые массивы, используются фиксированные явные Inspector-ссылки (`queuePoint1..4`, `exitPoint1..3`, `finalVisualShop1..3`). Руда создаётся отдельным seed-based генератором.
 
 ## Scene roots
 
@@ -138,7 +138,7 @@
   - `SandVolume.mtl`
 - `SandField`
   - `vacuumProbe`
-  - явные ссылки `ore1..4`
+  - ссылка `oreBuilder` на `SandOreAreaBuilder`
   - при выходе последнего collider игрока восстанавливает поверхность и руду, отключает пылесос и его анимацию
 - `SandEntryInteractor` расположен отдельно перед полем:
   - при входе `GameFlowController` выдаёт пылесос, отключает joystick-управление и запускает игрока к `SandRunTarget`;
@@ -152,6 +152,11 @@
   - `flyVisualPrefab`
   - `resultItem = GoldOre`
   - `collectRadius`
+- `SandOreAreaBuilder`
+  - использует границы `Sand/BoxCollider`;
+  - `oreCount = 10`, `minimumDistance = 1.6`, `edgePadding = 1.1`;
+  - `seed` задаёт воспроизводимую случайную раскладку аналогично `ForestAreaBuilder`;
+  - случайные поворот и scale `0.08..0.13`.
 
 ## Cart queue
 

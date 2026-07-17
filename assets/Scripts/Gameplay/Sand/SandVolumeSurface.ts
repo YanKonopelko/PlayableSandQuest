@@ -32,6 +32,13 @@ export class SandVolumeSurface extends Component {
     @property({ type: CCFloat, min: 0.01 })
     public textureTiling: number = 0.55;
 
+    @property({
+        type: CCFloat,
+        min: 0,
+        tooltip: 'Width of the smooth slope that lowers the sand to the collider bottom near its XZ border.',
+    })
+    public edgeFadeWidth: number = 1.1;
+
     private carvedHeights: number[] = [];
     private generatedMesh: Mesh | null = null;
     private readonly localProbe: Vec3 = new Vec3();
@@ -181,7 +188,15 @@ export class SandVolumeSurface extends Component {
                 const relief = this.SampleRelief(sampleX, sampleZ);
                 const naturalHeight = maxY - relief;
                 const carvedHeight = this.carvedHeights[index] - relief * 0.3;
-                heights[index] = Math.max(minY, Math.min(naturalHeight, carvedHeight));
+                const surfaceHeight = Math.max(minY, Math.min(naturalHeight, carvedHeight));
+                const distanceToEdge = Math.min(
+                    sampleX - minX,
+                    maxX - sampleX,
+                    sampleZ - minZ,
+                    maxZ - sampleZ,
+                );
+                const edgeFactor = this.GetEdgeFadeFactor(distanceToEdge);
+                heights[index] = minY + (surfaceHeight - minY) * edgeFactor;
             }
         }
 
@@ -279,5 +294,15 @@ export class SandVolumeSurface extends Component {
             renderer.setMaterial(this.sandMaterial, 0);
         }
         previousMesh?.destroy();
+    }
+
+    private GetEdgeFadeFactor(distanceToEdge: number): number {
+        const fadeWidth = Math.max(0, this.edgeFadeWidth);
+        if (fadeWidth <= 0.0001) {
+            return 1;
+        }
+
+        const normalizedDistance = Math.max(0, Math.min(1, distanceToEdge / fadeWidth));
+        return normalizedDistance * normalizedDistance * (3 - 2 * normalizedDistance);
     }
 }
