@@ -29,6 +29,12 @@ export class PlayerController extends Component {
     @property({ type: CCFloat })
     public moveSpeed: number = 4.5;
 
+    @property({ type: CCFloat, min: 0 })
+    public minJoystickAcceleration: number = 0.35;
+
+    @property({ type: CCFloat, min: 0 })
+    public maxJoystickAcceleration: number = 1;
+
     @property({ type: CCFloat })
     public rotationLerp: number = 14;
 
@@ -101,9 +107,18 @@ export class PlayerController extends Component {
         this.moveVector.normalize();
         this.lastDirection.set(this.moveVector);
 
+        const normalizedInput = Math.min(1, Math.max(
+            0,
+            (magnitude - this.inputDeadZone) / Math.max(0.001, 1 - this.inputDeadZone),
+        ));
+        const minAcceleration = Math.max(0, this.minJoystickAcceleration);
+        const maxAcceleration = Math.max(minAcceleration, this.maxJoystickAcceleration);
+        const acceleration = minAcceleration + (maxAcceleration - minAcceleration) * normalizedInput;
+        const currentMoveSpeed = this.moveSpeed * acceleration;
+
         root.getWorldPosition(this.desiredPosition);
-        this.desiredPosition.x += this.moveVector.x * this.moveSpeed * dt;
-        this.desiredPosition.z += this.moveVector.z * this.moveSpeed * dt;
+        this.desiredPosition.x += this.moveVector.x * currentMoveSpeed * dt;
+        this.desiredPosition.z += this.moveVector.z * currentMoveSpeed * dt;
 
         const limitedPosition = this.vacuumSystem
             ? this.vacuumSystem.GetLimitedPlayerPosition(this.desiredPosition)
