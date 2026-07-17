@@ -1,39 +1,52 @@
-import { _decorator, Component, Enum, Vec2, Vec3, Widget, Node } from 'cc';
+import { _decorator, Component, input, Input } from 'cc';
 import { SoundManager } from './Sounds/SoundManager';
 import { ESoundType } from './Sounds/SoundPreset';
 
-
-const { ccclass, property, requireComponent, executeInEditMode } = _decorator;
-
-
-@(ccclass("GameplayScene"))
-export class GameplayScene extends Component {
-    public static paused: boolean = false;
-
-    private tapCount = 3;
-    private readonly androidLink: string = "https://play.google.com/store/apps/details?id=com.rockbite.zombieoutpost";
-    private readonly iosLink: string = "https://apps.apple.com/us/app/idle-outpost-zombie-apocalypse/id6463128982";
-    protected async start(): Promise<void> {
-        document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                GameplayScene.paused = true;
-                console.log("PAUSE: вкладка скрыта");
-            } else {
-                GameplayScene.paused = false;
-                console.log("RESUME: вкладка активна");
-            }
-        });
-        await SoundManager.Instance.Init();
-        SoundManager.Instance.PlayMusic(ESoundType.Music);
-    }
-
-    public PlaySound() {
-        SoundManager.Instance.Play(ESoundType.None);
-        this.ToStore();
-    }
-
-    public ToStore() {
-        window.ToStore?.();
+declare global {
+    interface Window {
+        ToStore?: () => void;
     }
 }
 
+const { ccclass } = _decorator;
+
+@ccclass('GameplayScene')
+export class GameplayScene extends Component {
+    public static paused: boolean = false;
+
+    private audioStarted: boolean = false;
+
+    protected start(): void {
+        document.addEventListener('visibilitychange', this.OnVisibilityChanged);
+        input.once(Input.EventType.TOUCH_START, this.StartAudioAfterFirstTap, this);
+    }
+
+    protected onDestroy(): void {
+        document.removeEventListener('visibilitychange', this.OnVisibilityChanged);
+        input.off(Input.EventType.TOUCH_START, this.StartAudioAfterFirstTap, this);
+    }
+
+    public PlaySound(): void {
+        SoundManager.Instance?.Play(ESoundType.None);
+        this.ToStore();
+    }
+
+    public ToStore(): void {
+        window.ToStore?.();
+    }
+
+    private OnVisibilityChanged(): void {
+        GameplayScene.paused = document.hidden;
+        console.log(GameplayScene.paused ? 'PAUSE: tab hidden' : 'RESUME: tab active');
+    }
+
+    private async StartAudioAfterFirstTap(): Promise<void> {
+        if (this.audioStarted || !SoundManager.Instance) {
+            return;
+        }
+
+        this.audioStarted = true;
+        await SoundManager.Instance.Init();
+        SoundManager.Instance.PlayMusic(ESoundType.Music);
+    }
+}

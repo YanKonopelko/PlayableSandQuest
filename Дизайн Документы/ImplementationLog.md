@@ -1,0 +1,79 @@
+# Implementation log
+
+## 2026-07-16
+
+- Изучено основное ТЗ.
+- Проверена структура проекта Cocos Creator 3.8.7.
+- Подтверждено, что геймплейная логика почти не реализована: есть базовый `GameplayScene`, утилиты tween/sound и готовые модели/префабы.
+- Создан план модульной реализации без runtime fallback для критичных сценовых ссылок.
+- Созданы папки `assets/Scripts/Gameplay/**` под новые игровые системы.
+- Добавлена документация:
+  - `Дизайн Документы/План реализации.md`
+  - `Дизайн Документы/ScenePrefabSetup.md`
+  - `Дизайн Документы/ImplementationLog.md`
+- Добавлены базовые runtime-компоненты:
+  - `Core/RequiredReference.ts`
+  - `Items/ItemType.ts`
+  - `Items/ItemStackView.ts`
+  - `Items/ItemFlyService.ts`
+  - `Input/FloatingJoystick.ts`
+  - `Player/PlayerInventory.ts`
+  - `Player/PlayerAnimationController.ts`
+  - `Player/PlayerController.ts`
+  - `Camera/AdaptiveCameraFollower.ts`
+- Добавлены системы интеракций и пылесоса:
+  - `Interaction/Interactor.ts`
+  - `Interaction/StorageInteractor.ts`
+  - `Interaction/ShopInteractor.ts`
+  - `Vacuum/VacuumSystem.ts`
+- Добавлены системы песка, руды и очереди телег:
+  - `Sand/SandField.ts`
+  - `Sand/SandCollectableOre.ts`
+  - `CartQueue/CartUnit.ts`
+  - `CartQueue/CartQueueController.ts`
+- Добавлены подсказки, packshot и игровой flow:
+  - `Hints/HintTarget.ts`
+  - `Hints/HintController.ts`
+  - `Packshot/PackshotController.ts`
+  - `Flow/GameFlowController.ts`
+- Cocos Creator автоматически сгенерировал `.meta` для новых папок и TypeScript-файлов.
+- Выполнена TypeScript-проверка через bundled compiler Cocos:
+  - команда: `node C:\ProgramData\cocos\editors\Creator\3.8.7\resources\app.asar.unpacked\node_modules\typescript\lib\tsc.js --noEmit --skipLibCheck --project tsconfig.json`
+  - результат: успешно, ошибок в проектных скриптах нет.
+- Исправлена типизация `window.ToStore` в `assets/Scripts/GameplayScene.ts`.
+- `GameplayScene.ts` очищен от лишних импортов и переведён на запуск музыки после первого тапа, чтобы соответствовать playable/browser audio policy.
+- `GameFlowController` доработан: переход к хранилищу теперь происходит после завершения перелётов денег, а не мгновенно после обмена.
+- Повторная TypeScript-проверка после правок: успешно.
+- Прямое редактирование `.scene/.prefab` JSON отложено: сериализация Cocos содержит nested prefab instances и большое количество `__id__`-ссылок; безопаснее выполнять wiring новых компонентов через Cocos Inspector по `ScenePrefabSetup.md`, чтобы не повредить сцену.
+
+## 2026-07-17
+
+- Подтверждено подключение к запущенному `cocos-mcp-server 1.0.0` по `http://localhost:3000/mcp`; доступно 100 инструментов.
+- Через MCP настроена `assets/Scenes/scene.scene`:
+  - создан `GameplayRoot` и корни сервисов;
+  - настроены камера, floating joystick, игрок, физическое тело и анимация;
+  - созданы обязательные player/vacuum pivots и stack roots;
+  - настроены sand/exchange/storage/shop trigger-зоны;
+  - созданы точки очереди телег и маршрут выхода;
+  - добавлены четыре экземпляра руды, подсказки, conveyor/final shops и packshot root;
+  - все ссылки `GameFlowController` выставлены через Inspector-сериализацию MCP.
+- Созданы и повторно импортированы prefabs:
+  - `TubePart.prefab`;
+  - `MoneyItem.prefab`;
+  - `CartUnit.prefab`;
+  - `GameplayInteractor.prefab`;
+  - `GameplayStorage.prefab`;
+  - `GameplayShop.prefab`.
+- Создан `TubeWarning.mtl` для красного мигания шланга при достижении лимита.
+- Исправлены ограничения сериализации MCP:
+  - `PlayerInventory` использует три явные ссылки на `ItemStackView`;
+  - `PlayerAnimationController` принимает существующий `SkeletalAnimation` орка;
+  - `Interactor` требует явный `BoxCollider` без fallback-поиска;
+  - очереди, маршрут, sand cells, ores и final shops используют фиксированные Inspector-поля вместо пустых массивов.
+- Выполнены проверки:
+  - автоматический MCP-аудит обязательных ссылок: `89/89` заполнены;
+  - четыре interactor collider имеют `isTrigger = true` и размер `2.4 x 2 x 2.4`;
+  - сцена сохранена, `dirty = false`, `ready = true`;
+  - сцена и семь новых prefab/material assets импортированы без `MissingScript`;
+  - TypeScript `--noEmit --skipLibCheck`: успешно.
+- MCP-сервер не предоставляет команды запуска Preview/Play, поэтому финальный интерактивный smoke test остаётся выполнить кнопкой Play в Cocos Creator.
