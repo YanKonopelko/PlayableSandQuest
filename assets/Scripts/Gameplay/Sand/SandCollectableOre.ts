@@ -62,4 +62,9 @@ export class SandCollectableOre extends Component {
             complete();
         }
     }
+
+    public ResetOre(): void {
+        this.collected = false;
+        this.node.active = true;
+    }
 }

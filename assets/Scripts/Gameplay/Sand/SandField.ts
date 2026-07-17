@@ -1,6 +1,9 @@
-import { _decorator, CCFloat, Component, Node, Vec3 } from 'cc';
+import { _decorator, BoxCollider, CCFloat, Collider, Component, ITriggerEvent, Node, Vec3 } from 'cc';
 import { SandCollectableOre } from './SandCollectableOre';
 import { VacuumSystem } from '../Vacuum/VacuumSystem';
+import { PlayerController } from '../Player/PlayerController';
+import { RequiredReference } from '../Core/RequiredReference';
+import { SandVolumeSurface } from './SandVolumeSurface';
 
 const { ccclass, property } = _decorator;
 
@@ -12,17 +15,17 @@ export class SandField extends Component {
     @property(Node)
     public vacuumProbe: Node | null = null;
 
-    @property(Node)
-    public sandCell1: Node | null = null;
+    @property(BoxCollider)
+    public zoneCollider: BoxCollider | null = null;
 
     @property(Node)
-    public sandCell2: Node | null = null;
+    public playerRoot: Node | null = null;
 
-    @property(Node)
-    public sandCell3: Node | null = null;
+    @property(PlayerController)
+    public playerController: PlayerController | null = null;
 
-    @property(Node)
-    public sandCell4: Node | null = null;
+    @property(SandVolumeSurface)
+    public surface: SandVolumeSurface | null = null;
 
     @property(SandCollectableOre)
     public ore1: SandCollectableOre | null = null;
@@ -43,14 +46,34 @@ export class SandField extends Component {
     public tickInterval: number = 0.05;
 
     private tickTimer: number = 0;
-    private collectedCells: number = 0;
+    private readonly playerColliders: Set<Collider> = new Set<Collider>();
 
     public get CollectedCells(): number {
-        return this.collectedCells;
+        return this.surface?.ErasedCellCount ?? 0;
+    }
+
+    protected onLoad(): void {
+        RequiredReference.Check(this, this.vacuumSystem, 'vacuumSystem');
+        RequiredReference.CheckNode(this, this.vacuumProbe, 'vacuumProbe');
+        RequiredReference.Check(this, this.zoneCollider, 'zoneCollider');
+        RequiredReference.CheckNode(this, this.playerRoot, 'playerRoot');
+        RequiredReference.Check(this, this.playerController, 'playerController');
+        RequiredReference.Check(this, this.surface, 'surface');
+    }
+
+    protected onEnable(): void {
+        this.zoneCollider?.on('onTriggerEnter', this.OnTriggerEnter, this);
+        this.zoneCollider?.on('onTriggerExit', this.OnTriggerExit, this);
+    }
+
+    protected onDisable(): void {
+        this.zoneCollider?.off('onTriggerEnter', this.OnTriggerEnter, this);
+        this.zoneCollider?.off('onTriggerExit', this.OnTriggerExit, this);
+        this.playerColliders.clear();
     }
 
     protected update(dt: number): void {
-        if (!this.vacuumSystem?.IsActive || !this.vacuumProbe) {
+        if (this.playerColliders.size === 0 || !this.vacuumSystem?.IsActive || !this.vacuumProbe) {
             return;
         }
 
@@ -64,40 +87,62 @@ export class SandField extends Component {
     }
 
     public CollectAt(worldPosition: Vec3): void {
-        const radiusSqr = this.collectRadius * this.collectRadius;
-
-        for (const cell of this.GetSandCells()) {
-            if (!cell || !cell.active) {
-                continue;
-            }
-
-            if (this.DistanceXZSqr(cell.worldPosition, worldPosition) <= radiusSqr) {
-                cell.active = false;
-                this.collectedCells++;
-            }
-        }
+        this.surface?.Erase(worldPosition, this.collectRadius);
 
         for (const ore of [this.ore1, this.ore2, this.ore3, this.ore4]) {
-            ore?.TryCollectFrom(this.vacuumProbe);
+            if (this.vacuumProbe) {
+                ore?.TryCollectFrom(this.vacuumProbe);
+            }
         }
     }
 
     public ResetField(): void {
-        this.collectedCells = 0;
-        for (const cell of this.GetSandCells()) {
-            if (cell) {
-                cell.active = true;
-            }
+        this.tickTimer = 0;
+        this.surface?.ResetSurface();
+        for (const ore of [this.ore1, this.ore2, this.ore3, this.ore4]) {
+            ore?.ResetOre();
         }
     }
 
-    private DistanceXZSqr(a: Vec3, b: Vec3): number {
-        const dx = a.x - b.x;
-        const dz = a.z - b.z;
-        return dx * dx + dz * dz;
+    private OnTriggerEnter(event: ITriggerEvent): void {
+        const collider = event.otherCollider;
+        if (!this.IsPlayer(collider.node)) {
+            return;
+        }
+
+        const wasOutside = this.playerColliders.size === 0;
+        this.playerColliders.add(collider);
+        if (wasOutside) {
+            this.vacuumSystem?.Activate();
+            this.playerController?.SetVacuumVisualEnabled(true);
+        }
     }
 
-    private GetSandCells(): Array<Node | null> {
-        return [this.sandCell1, this.sandCell2, this.sandCell3, this.sandCell4];
+    private OnTriggerExit(event: ITriggerEvent): void {
+        const collider = event.otherCollider;
+        if (!this.IsPlayer(collider.node)) {
+            return;
+        }
+
+        this.playerColliders.delete(collider);
+        if (this.playerColliders.size > 0) {
+            return;
+        }
+
+        this.ResetField();
+        this.vacuumSystem?.Deactivate();
+        this.playerController?.SetVacuumVisualEnabled(false);
+    }
+
+    private IsPlayer(node: Node): boolean {
+        const playerRoot = this.playerRoot;
+        let current: Node | null = node;
+        while (current) {
+            if (current === playerRoot) {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
     }
 }

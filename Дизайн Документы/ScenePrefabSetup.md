@@ -15,7 +15,7 @@
 - `GameplayStorage.prefab`
 - `GameplayShop.prefab`
 
-Для полей, которые MCP-сервер не умеет сериализовать как пустые массивы, используются фиксированные явные Inspector-ссылки (`queuePoint1..4`, `exitPoint1..3`, `sandCell1..4`, `ore1..4`, `finalVisualShop1..3`). Это сохраняет принцип отсутствия runtime fallback.
+Для полей, которые MCP-сервер не умеет сериализовать как пустые массивы, используются фиксированные явные Inspector-ссылки (`queuePoint1..4`, `exitPoint1..3`, `ore1..4`, `finalVisualShop1..3`). Это сохраняет принцип отсутствия runtime fallback.
 
 ## Scene roots
 
@@ -119,16 +119,26 @@
 
 На поле песка:
 
+- `BoxCollider`
+  - размер `20 x 1 x 20`
+  - `isTrigger = true`
+- `SandVolumeSurface`
+  - создаёт цельный объёмный mesh точно по границам `BoxCollider`
+  - непрерывно вычитает сферическую выемку вокруг `VacuumProbe`, без клеточной маски и исчезающих блоков
+  - шаг геометрии `0.2`, многочастотный рельеф и пересчитываемые нормали
+  - глобальные UV с повторяющейся текстурой грунта вместо плоской одноцветной заливки
+  - `SandVolume.mtl`
 - `SandField`
-  - cell nodes / mask parts
   - `vacuumProbe`
-  - список `SandCollectableOre`
+  - явные ссылки `ore1..4`
+  - при выходе последнего collider игрока восстанавливает поверхность и руду, отключает пылесос и его анимацию
+- `Interactor` и `HintTarget` используют тот же trigger-поле и переданы в `GameFlowController`.
 
 На руде:
 
 - `SandCollectableOre`
-  - `itemPrefab`
-  - `targetItemType = GoldOre`
+  - `flyVisualPrefab`
+  - `resultItem = GoldOre`
   - `collectRadius`
 
 ## Cart queue

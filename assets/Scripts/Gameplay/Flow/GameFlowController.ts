@@ -169,8 +169,6 @@ export class GameFlowController extends Component {
     }
 
     private OnSandEnter(): void {
-        this.vacuum?.Activate();
-        this.player?.SetVacuumVisualEnabled(true);
         this.SetState(EGameFlowState.CollectGold);
     }
 
