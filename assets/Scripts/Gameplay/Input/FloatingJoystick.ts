@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, Component, EventTouch, input, Input, Node, UITransform, Vec2, Vec3 } from 'cc';
+import { _decorator, Camera, CCFloat, Component, EventTouch, input, Input, Node, Vec2, Vec3 } from 'cc';
 import { RequiredReference } from '../Core/RequiredReference';
 
 const { ccclass, property } = _decorator;
@@ -11,15 +11,17 @@ export class FloatingJoystick extends Component {
     @property(Node)
     public handleNode: Node | null = null;
 
-    @property(UITransform)
-    public inputSpace: UITransform | null = null;
+    @property(Camera)
+    public camera: Camera | null = null;
 
     @property({ type: CCFloat })
     public radius: number = 90;
 
     private pointerId: number = -1;
-    private origin: Vec2 = new Vec2();
-    private direction: Vec2 = new Vec2();
+    private readonly origin: Vec3 = new Vec3();
+    private readonly direction: Vec2 = new Vec2();
+    private readonly screenPosition: Vec3 = new Vec3();
+    private readonly worldPosition: Vec3 = new Vec3();
     private isPressed: boolean = false;
 
     public get Direction(): Vec2 {
@@ -33,7 +35,7 @@ export class FloatingJoystick extends Component {
     protected onLoad(): void {
         RequiredReference.CheckNode(this, this.baseNode, 'baseNode');
         RequiredReference.CheckNode(this, this.handleNode, 'handleNode');
-        RequiredReference.Check(this, this.inputSpace, 'inputSpace');
+        RequiredReference.Check(this, this.camera, 'camera');
         this.SetVisible(false);
     }
 
@@ -52,41 +54,53 @@ export class FloatingJoystick extends Component {
     }
 
     private OnTouchStart(event: EventTouch): void {
-        if (this.isPressed || !this.inputSpace || !this.baseNode || !this.handleNode) {
+        if (this.isPressed || !this.camera || !this.baseNode || !this.handleNode) {
             return;
         }
 
         this.pointerId = event.getID();
         this.isPressed = true;
 
-        const ui = event.getUILocation();
-        const local3 = this.inputSpace.convertToNodeSpaceAR(new Vec3(ui.x, ui.y, 0));
-        this.origin.set(local3.x, local3.y);
+        this.baseNode.getWorldPosition(this.origin);
+        this.ConvertTouchToWorld(event, this.origin, this.worldPosition);
+        this.origin.set(this.worldPosition);
 
-        this.baseNode.setPosition(local3);
-        this.handleNode.setPosition(local3);
+        this.baseNode.setWorldPosition(this.origin);
+        this.handleNode.setWorldPosition(this.origin);
         this.direction.set(0, 0);
         this.SetVisible(true);
     }
 
     private OnTouchMove(event: EventTouch): void {
-        if (!this.isPressed || event.getID() !== this.pointerId || !this.inputSpace || !this.handleNode) {
+        if (!this.isPressed || event.getID() !== this.pointerId || !this.camera || !this.handleNode) {
             return;
         }
 
-        const ui = event.getUILocation();
-        const local3 = this.inputSpace.convertToNodeSpaceAR(new Vec3(ui.x, ui.y, 0));
-        const current = new Vec2(local3.x, local3.y);
-        const delta = new Vec2();
-        Vec2.subtract(delta, current, this.origin);
+        this.ConvertTouchToWorld(event, this.origin, this.worldPosition);
+        const delta = new Vec2(
+            this.worldPosition.x - this.origin.x,
+            this.worldPosition.y - this.origin.y,
+        );
 
         const length = delta.length();
         const clamped = length > this.radius && length > 0
             ? delta.multiplyScalar(this.radius / length)
             : delta;
 
-        this.handleNode.setPosition(this.origin.x + clamped.x, this.origin.y + clamped.y, 0);
+        this.worldPosition.set(
+            this.origin.x + clamped.x,
+            this.origin.y + clamped.y,
+            this.origin.z,
+        );
+        this.handleNode.setWorldPosition(this.worldPosition);
         this.direction.set(clamped.x / this.radius, clamped.y / this.radius);
+    }
+
+    private ConvertTouchToWorld(event: EventTouch, referenceWorldPosition: Vec3, out: Vec3): void {
+        const location = event.getLocation();
+        this.camera!.worldToScreen(referenceWorldPosition, this.screenPosition);
+        this.screenPosition.set(location.x, location.y, this.screenPosition.z);
+        this.camera!.screenToWorld(this.screenPosition, out);
     }
 
     private OnTouchEnd(event: EventTouch): void {
