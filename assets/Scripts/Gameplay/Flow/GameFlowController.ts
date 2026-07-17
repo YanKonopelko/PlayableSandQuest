@@ -11,6 +11,7 @@ import { PlayerController } from '../Player/PlayerController';
 import { PlayerInventory } from '../Player/PlayerInventory';
 import { VacuumSystem } from '../Vacuum/VacuumSystem';
 import { PackshotController } from '../Packshot/PackshotController';
+import { SandField } from '../Sand/SandField';
 
 const { ccclass, property } = _decorator;
 
@@ -45,6 +46,12 @@ export class GameFlowController extends Component {
 
     @property(Interactor)
     public sandInteractor: Interactor | null = null;
+
+    @property(SandField)
+    public sandField: SandField | null = null;
+
+    @property(Node)
+    public sandRunTarget: Node | null = null;
 
     @property(Interactor)
     public exchangeInteractor: Interactor | null = null;
@@ -126,7 +133,7 @@ export class GameFlowController extends Component {
 
     private BindEvents(): void {
         this.sandInteractor?.onPlayerEnter.Subscribe(this.OnSandEnter, this);
-        this.sandInteractor?.onPlayerExit.Subscribe(this.OnSandExit, this);
+        this.sandField?.onPlayerExit.Subscribe(this.OnSandExit, this);
         this.exchangeInteractor?.onPlayerEnter.Subscribe(this.OnExchangeEnter, this);
         this.moneyStorage?.onPlayerEnter.Subscribe(this.OnStorageEnter, this);
         this.upgradeShop?.onPlayerEnter.Subscribe(this.OnUpgradeShopEnter, this);
@@ -169,10 +176,23 @@ export class GameFlowController extends Component {
     }
 
     private OnSandEnter(): void {
+        if (this.state !== EGameFlowState.GoToSand) {
+            return;
+        }
+
+        this.vacuum?.Activate();
+        this.player?.SetVacuumVisualEnabled(true);
         this.SetState(EGameFlowState.CollectGold);
+        if (this.player && this.sandRunTarget) {
+            this.player.RunAutomaticallyTo(this.sandRunTarget);
+        }
     }
 
     private OnSandExit(): void {
+        if (this.state !== EGameFlowState.CollectGold) {
+            return;
+        }
+
         if ((this.inventory?.GetCount(EItemType.GoldOre) ?? 0) > 0) {
             this.SetState(EGameFlowState.GoToExchange);
         } else {

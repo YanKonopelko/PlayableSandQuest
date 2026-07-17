@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, Component, Node, Vec2, Vec3 } from 'cc';
+import { _decorator, CapsuleCollider, CCFloat, Component, geometry, Node, PhysicsSystem, Vec2, Vec3 } from 'cc';
 import { FloatingJoystick } from '../Input/FloatingJoystick';
 import { RequiredReference } from '../Core/RequiredReference';
 import { PlayerAnimationController } from './PlayerAnimationController';
@@ -23,6 +23,9 @@ export class PlayerController extends Component {
     @property(VacuumSystem)
     public vacuumSystem: VacuumSystem | null = null;
 
+    @property(CapsuleCollider)
+    public movementCollider: CapsuleCollider | null = null;
+
     @property({ type: CCFloat })
     public moveSpeed: number = 4.5;
 
@@ -32,13 +35,33 @@ export class PlayerController extends Component {
     @property({ type: CCFloat })
     public inputDeadZone: number = 0.08;
 
+    @property({ type: CCFloat })
+    public autoMoveSpeed: number = 5.5;
+
+    @property({ type: CCFloat })
+    public autoMoveStoppingDistance: number = 0.12;
+
+    @property({ type: CCFloat })
+    public collisionSkin: number = 0.06;
+
     private readonly desiredPosition: Vec3 = new Vec3();
     private readonly moveVector: Vec3 = new Vec3();
     private readonly lastDirection: Vec3 = new Vec3(0, 0, 1);
     private movementEnabled: boolean = true;
+    private autoMoveTarget: Node | null = null;
+    private autoMoveComplete: (() => void) | null = null;
+    private readonly movementRay: geometry.Ray = geometry.Ray.create();
+    private readonly capsuleCenter: Vec3 = new Vec3();
+    private readonly sweepOrigin: Vec3 = new Vec3();
+    private readonly resolvedPosition: Vec3 = new Vec3();
+    private readonly collisionNormal: Vec3 = new Vec3();
+    private readonly slideDirection: Vec3 = new Vec3();
+    private readonly worldScale: Vec3 = new Vec3();
+    private readonly rayOrigin: Vec3 = new Vec3();
 
     protected onLoad(): void {
         RequiredReference.Check(this, this.joystick, 'joystick');
+        RequiredReference.Check(this, this.movementCollider, 'movementCollider');
 
         if (!this.movementRoot) {
             this.movementRoot = this.node;
@@ -51,7 +74,16 @@ export class PlayerController extends Component {
 
     protected update(dt: number): void {
         const root = this.movementRoot;
-        if (!root || !this.movementEnabled) {
+        if (!root) {
+            return;
+        }
+
+        if (this.autoMoveTarget) {
+            this.UpdateAutomaticMovement(dt);
+            return;
+        }
+
+        if (!this.movementEnabled) {
             this.animationController?.SetMoving(false);
             return;
         }
@@ -77,7 +109,7 @@ export class PlayerController extends Component {
             ? this.vacuumSystem.GetLimitedPlayerPosition(this.desiredPosition)
             : this.desiredPosition;
 
-        root.setWorldPosition(limitedPosition);
+        root.setWorldPosition(this.ResolveMovement(root, limitedPosition));
         this.UpdateRotation(dt);
         this.animationController?.SetMoving(true);
     }
@@ -91,6 +123,213 @@ export class PlayerController extends Component {
 
     public SetVacuumVisualEnabled(value: boolean): void {
         this.animationController?.SetVacuumEnabled(value);
+    }
+
+    public RunAutomaticallyTo(target: Node, onComplete?: () => void): void {
+        this.autoMoveTarget = target;
+        this.autoMoveComplete = onComplete ?? null;
+        this.movementEnabled = false;
+    }
+
+    public CancelAutomaticMovement(): void {
+        this.autoMoveTarget = null;
+        this.autoMoveComplete = null;
+        this.movementEnabled = true;
+        this.animationController?.SetMoving(false);
+    }
+
+    public GetObstacleDistance(direction: Vec3, maxDistance: number): number {
+        const collider = this.movementCollider;
+        if (!collider || maxDistance <= 0) {
+            return -1;
+        }
+
+        this.moveVector.set(direction.x, 0, direction.z);
+        if (this.moveVector.lengthSqr() <= 0.0001) {
+            return -1;
+        }
+        this.moveVector.normalize();
+        this.GetCapsuleCenter(collider, this.capsuleCenter);
+        return this.FindBlockingDistance(
+            collider,
+            this.capsuleCenter,
+            this.moveVector,
+            maxDistance,
+            this.collisionNormal,
+        );
+    }
+
+    private UpdateAutomaticMovement(dt: number): void {
+        const root = this.movementRoot;
+        const target = this.autoMoveTarget;
+        if (!root || !target) {
+            this.CancelAutomaticMovement();
+            return;
+        }
+
+        root.getWorldPosition(this.desiredPosition);
+        const targetPosition = target.worldPosition;
+        const dx = targetPosition.x - this.desiredPosition.x;
+        const dz = targetPosition.z - this.desiredPosition.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        const stopDistance = Math.max(0.01, this.autoMoveStoppingDistance);
+        if (distance <= stopDistance) {
+            this.desiredPosition.x = targetPosition.x;
+            this.desiredPosition.z = targetPosition.z;
+            root.setWorldPosition(this.desiredPosition);
+            const complete = this.autoMoveComplete;
+            this.autoMoveTarget = null;
+            this.autoMoveComplete = null;
+            this.movementEnabled = true;
+            this.animationController?.SetMoving(false);
+            complete?.();
+            return;
+        }
+
+        this.moveVector.set(dx / distance, 0, dz / distance);
+        this.lastDirection.set(this.moveVector);
+        const step = Math.min(distance, Math.max(0.01, this.autoMoveSpeed) * dt);
+        this.desiredPosition.x += this.moveVector.x * step;
+        this.desiredPosition.z += this.moveVector.z * step;
+        root.setWorldPosition(this.ResolveMovement(root, this.desiredPosition));
+        this.UpdateRotation(dt);
+        this.animationController?.SetMoving(true);
+    }
+
+    private ResolveMovement(root: Node, desiredWorldPosition: Vec3): Vec3 {
+        const collider = this.movementCollider;
+        root.getWorldPosition(this.resolvedPosition);
+        if (!collider) {
+            this.resolvedPosition.set(desiredWorldPosition);
+            return this.resolvedPosition;
+        }
+
+        const dx = desiredWorldPosition.x - this.resolvedPosition.x;
+        const dz = desiredWorldPosition.z - this.resolvedPosition.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        if (distance <= 0.0001) {
+            return this.resolvedPosition;
+        }
+
+        this.moveVector.set(dx / distance, 0, dz / distance);
+        this.GetCapsuleCenter(collider, this.capsuleCenter);
+        const firstHitDistance = this.FindBlockingDistance(
+            collider,
+            this.capsuleCenter,
+            this.moveVector,
+            distance,
+            this.collisionNormal,
+        );
+        if (firstHitDistance < 0) {
+            this.resolvedPosition.set(desiredWorldPosition);
+            return this.resolvedPosition;
+        }
+
+        const skin = Math.max(0.001, this.collisionSkin);
+        const forwardDistance = Math.max(0, Math.min(distance, firstHitDistance - skin));
+        this.resolvedPosition.x += this.moveVector.x * forwardDistance;
+        this.resolvedPosition.z += this.moveVector.z * forwardDistance;
+
+        const remainingDistance = distance - forwardDistance;
+        const normalDot = Vec3.dot(this.moveVector, this.collisionNormal);
+        this.slideDirection.set(
+            this.moveVector.x - this.collisionNormal.x * normalDot,
+            0,
+            this.moveVector.z - this.collisionNormal.z * normalDot,
+        );
+        const slideLength = this.slideDirection.length();
+        if (remainingDistance <= 0.0001 || slideLength <= 0.0001) {
+            return this.resolvedPosition;
+        }
+
+        this.slideDirection.multiplyScalar(1 / slideLength);
+        this.sweepOrigin.set(this.capsuleCenter);
+        this.sweepOrigin.x += this.moveVector.x * forwardDistance;
+        this.sweepOrigin.z += this.moveVector.z * forwardDistance;
+        const requestedSlideDistance = remainingDistance * slideLength;
+        const slideHitDistance = this.FindBlockingDistance(
+            collider,
+            this.sweepOrigin,
+            this.slideDirection,
+            requestedSlideDistance,
+            this.collisionNormal,
+        );
+        const allowedSlideDistance = slideHitDistance < 0
+            ? requestedSlideDistance
+            : Math.max(0, Math.min(requestedSlideDistance, slideHitDistance - skin));
+        this.resolvedPosition.x += this.slideDirection.x * allowedSlideDistance;
+        this.resolvedPosition.z += this.slideDirection.z * allowedSlideDistance;
+        return this.resolvedPosition;
+    }
+
+    private FindBlockingDistance(
+        collider: CapsuleCollider,
+        origin: Vec3,
+        direction: Vec3,
+        distance: number,
+        outNormal: Vec3,
+    ): number {
+        if (distance <= 0.0001) {
+            return -1;
+        }
+
+        collider.node.getWorldScale(this.worldScale);
+        const radius = collider.radius * Math.max(Math.abs(this.worldScale.x), Math.abs(this.worldScale.z));
+        let closestDistance = Number.POSITIVE_INFINITY;
+        const sideX = -direction.z * radius * 0.85;
+        const sideZ = direction.x * radius * 0.85;
+        for (const side of [0, -1, 1]) {
+            this.rayOrigin.set(origin.x + sideX * side, origin.y, origin.z + sideZ * side);
+            geometry.Ray.set(
+                this.movementRay,
+                this.rayOrigin.x,
+                this.rayOrigin.y,
+                this.rayOrigin.z,
+                direction.x,
+                0,
+                direction.z,
+            );
+            const hit = PhysicsSystem.instance.raycast(
+                this.movementRay,
+                0xffffffff,
+                distance + radius + Math.max(0.001, this.collisionSkin),
+                false,
+            );
+            if (!hit) {
+                continue;
+            }
+
+            for (const result of PhysicsSystem.instance.raycastResults) {
+                if (this.IsOwnCollider(result.collider.node)) {
+                    continue;
+                }
+
+                const allowedCenterDistance = result.distance - radius;
+                if (allowedCenterDistance < closestDistance) {
+                    closestDistance = allowedCenterDistance;
+                    outNormal.set(result.hitNormal.x, 0, result.hitNormal.z);
+                    if (outNormal.lengthSqr() > 0.0001) {
+                        outNormal.normalize();
+                    }
+                }
+            }
+        }
+        return Number.isFinite(closestDistance) ? Math.max(0, closestDistance) : -1;
+    }
+
+    private GetCapsuleCenter(collider: CapsuleCollider, out: Vec3): void {
+        Vec3.transformMat4(out, collider.center, collider.node.worldMatrix);
+    }
+
+    private IsOwnCollider(node: Node): boolean {
+        let current: Node | null = node;
+        while (current) {
+            if (current === this.node) {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
     }
 
     private UpdateRotation(dt: number): void {

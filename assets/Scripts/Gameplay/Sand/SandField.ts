@@ -4,6 +4,7 @@ import { VacuumSystem } from '../Vacuum/VacuumSystem';
 import { PlayerController } from '../Player/PlayerController';
 import { RequiredReference } from '../Core/RequiredReference';
 import { SandVolumeSurface } from './SandVolumeSurface';
+import { CustomActionWithParam } from '../../Utills/CustomActions';
 
 const { ccclass, property } = _decorator;
 
@@ -47,6 +48,8 @@ export class SandField extends Component {
 
     private tickTimer: number = 0;
     private readonly playerColliders: Set<Collider> = new Set<Collider>();
+
+    public readonly onPlayerExit: CustomActionWithParam<SandField> = new CustomActionWithParam<SandField>();
 
     public get CollectedCells(): number {
         return this.surface?.ErasedCellCount ?? 0;
@@ -110,12 +113,7 @@ export class SandField extends Component {
             return;
         }
 
-        const wasOutside = this.playerColliders.size === 0;
         this.playerColliders.add(collider);
-        if (wasOutside) {
-            this.vacuumSystem?.Activate();
-            this.playerController?.SetVacuumVisualEnabled(true);
-        }
     }
 
     private OnTriggerExit(event: ITriggerEvent): void {
@@ -132,6 +130,7 @@ export class SandField extends Component {
         this.ResetField();
         this.vacuumSystem?.Deactivate();
         this.playerController?.SetVacuumVisualEnabled(false);
+        this.onPlayerExit.Invoke(this);
     }
 
     private IsPlayer(node: Node): boolean {

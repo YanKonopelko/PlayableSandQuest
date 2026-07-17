@@ -37,6 +37,8 @@
 - `PlayerController`
   - `joystick`
   - `vacuumSystem`
+  - `movementCollider = Player/CapsuleCollider`
+  - движение проверяется тремя raycast по ширине капсулы и скользит вдоль обычных collider, не учитывая trigger-зоны
   - `movementRoot` или сама node
   - `moveSpeed`
   - `rotationLerp`
@@ -109,11 +111,17 @@
   - `tubeHeadHomePivot`
   - `machinePivot`
   - `playerHandPivot`
+  - `playerFacingRoot = Orc`, чтобы головка пылесоса повторяла направление персонажа
   - `tubePartPrefab`
   - `tubePartsRoot`
   - `normalTubeMaterial`
   - `warningTubeMaterial`
   - длины для upgrade 0/1/2
+
+## Fence collision
+
+- Исходный `BoxCollider 20 x 1 x 20` на `FencePerimeter` отключён как физическое тело: он является сплошным объёмом, а не рамкой.
+- `FenceCollisionRoot` содержит статические не-trigger `BoxCollider` по сторонам периметра и сохраняет проход к песку.
 
 ## Sand
 
@@ -132,7 +140,11 @@
   - `vacuumProbe`
   - явные ссылки `ore1..4`
   - при выходе последнего collider игрока восстанавливает поверхность и руду, отключает пылесос и его анимацию
-- `Interactor` и `HintTarget` используют тот же trigger-поле и переданы в `GameFlowController`.
+- `SandEntryInteractor` расположен отдельно перед полем:
+  - при входе `GameFlowController` выдаёт пылесос, отключает joystick-управление и запускает игрока к `SandRunTarget`;
+  - после достижения `SandRunTarget` управление возвращается;
+  - большой collider песка не является игровым interactor и используется только `SandField`.
+- При полном выходе из collider песка `SandField` восстанавливает поле и отправляет головку пылесоса обратно в `TubeHeadHomePivot`.
 
 На руде:
 

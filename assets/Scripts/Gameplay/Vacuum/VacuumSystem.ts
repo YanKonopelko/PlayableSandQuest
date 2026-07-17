@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, CCInteger, Component, instantiate, Material, MeshRenderer, Node, Prefab, tween, Vec3 } from 'cc';
+import { _decorator, CCFloat, CCInteger, Component, instantiate, Material, MeshRenderer, Node, Prefab, tween, Tween, Vec3 } from 'cc';
 import { TweenUtils } from '../../Utills/TweenUtils';
 import { RequiredReference } from '../Core/RequiredReference';
 
@@ -13,7 +13,13 @@ export class VacuumSystem extends Component {
     public machinePivot: Node | null = null;
 
     @property(Node)
+    public tubeHeadHomePivot: Node | null = null;
+
+    @property(Node)
     public playerHandPivot: Node | null = null;
+
+    @property(Node)
+    public playerFacingRoot: Node | null = null;
 
     @property(Prefab)
     public tubePartPrefab: Prefab | null = null;
@@ -57,6 +63,9 @@ export class VacuumSystem extends Component {
     private warningTimer: number = 0;
     private warningBlinkState: boolean = false;
     private tubeParts: Node[] = [];
+    private headAttached: boolean = false;
+    private returningHome: boolean = false;
+    private headTransitionVersion: number = 0;
 
     public get IsActive(): boolean {
         return this.active;
@@ -73,20 +82,27 @@ export class VacuumSystem extends Component {
     protected onLoad(): void {
         RequiredReference.CheckNode(this, this.tubeHead, 'tubeHead');
         RequiredReference.CheckNode(this, this.machinePivot, 'machinePivot');
+        RequiredReference.CheckNode(this, this.tubeHeadHomePivot, 'tubeHeadHomePivot');
         RequiredReference.CheckNode(this, this.playerHandPivot, 'playerHandPivot');
+        RequiredReference.CheckNode(this, this.playerFacingRoot, 'playerFacingRoot');
         RequiredReference.Check(this, this.tubePartPrefab, 'tubePartPrefab');
         RequiredReference.CheckNode(this, this.tubePartsRoot, 'tubePartsRoot');
+        this.SnapHeadHome();
         this.SetVisualActive(false);
     }
 
     protected update(dt: number): void {
-        if (!this.active) {
+        if (!this.active && !this.returningHome) {
             return;
         }
 
-        this.SyncHeadToHand();
+        if (this.active && this.headAttached) {
+            this.SyncHeadToHand();
+        }
         this.RebuildTube();
-        this.UpdateWarningBlink(dt);
+        if (this.active) {
+            this.UpdateWarningBlink(dt);
+        }
     }
 
     public Activate(): void {
@@ -94,23 +110,59 @@ export class VacuumSystem extends Component {
             return;
         }
 
+        Tween.stopAllByTarget(this.tubeHead);
+        const transitionVersion = ++this.headTransitionVersion;
         this.active = true;
+        this.returningHome = false;
+        this.headAttached = false;
         this.SetVisualActive(true);
         TweenUtils.FlyTweenWithMidlePointAndScaleToNode(
             this.tubeHead,
             new Vec3(0, 1.2, 0),
             this.playerHandPivot,
             1.15,
-            () => this.SyncHeadToHand(),
+            () => {
+                if (transitionVersion !== this.headTransitionVersion) {
+                    return;
+                }
+                this.headAttached = true;
+                this.SyncHeadToHand();
+            },
             this.headFlyDuration,
         );
     }
 
     public Deactivate(): void {
         this.active = false;
+        this.headAttached = false;
         this.SetWarning(false);
-        this.SetVisualActive(false);
-        this.EnsureSegmentCount(0);
+        if (!this.tubeHead || !this.tubeHeadHomePivot) {
+            this.returningHome = false;
+            this.SetVisualActive(false);
+            this.EnsureSegmentCount(0);
+            return;
+        }
+
+        Tween.stopAllByTarget(this.tubeHead);
+        const transitionVersion = ++this.headTransitionVersion;
+        this.returningHome = true;
+        this.SetVisualActive(true);
+        TweenUtils.FlyTweenWithMidlePointAndScaleToNode(
+            this.tubeHead,
+            new Vec3(0, 0.8, 0),
+            this.tubeHeadHomePivot,
+            1.05,
+            () => {
+                if (transitionVersion !== this.headTransitionVersion) {
+                    return;
+                }
+                this.returningHome = false;
+                this.SnapHeadHome();
+                this.SetVisualActive(false);
+                this.EnsureSegmentCount(0);
+            },
+            this.headFlyDuration,
+        );
     }
 
     public UpgradeLength(): boolean {
@@ -166,7 +218,16 @@ export class VacuumSystem extends Component {
         }
 
         this.tubeHead.setWorldPosition(this.playerHandPivot.worldPosition);
-        this.tubeHead.setWorldRotation(this.playerHandPivot.worldRotation);
+        this.tubeHead.setWorldRotation(this.playerFacingRoot?.worldRotation ?? this.playerHandPivot.worldRotation);
+    }
+
+    private SnapHeadHome(): void {
+        if (!this.tubeHead || !this.tubeHeadHomePivot) {
+            return;
+        }
+
+        this.tubeHead.setWorldPosition(this.tubeHeadHomePivot.worldPosition);
+        this.tubeHead.setWorldRotation(this.tubeHeadHomePivot.worldRotation);
     }
 
     private RebuildTube(): void {
