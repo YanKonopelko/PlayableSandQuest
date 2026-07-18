@@ -119,6 +119,7 @@ export class GameFlowController extends Component {
     private upgradePurchases: number = 0;
     private state: EGameFlowState = EGameFlowState.GoToSand;
     private finalTapArmed: boolean = false;
+    private exchangeInProgress: boolean = false;
 
     protected start(): void {
         this.BindEvents();
@@ -176,42 +177,42 @@ export class GameFlowController extends Component {
     }
 
     private OnSandEnter(): void {
-        if (this.state !== EGameFlowState.GoToSand) {
-            return;
-        }
-
         this.vacuum?.Activate();
         this.player?.SetVacuumVisualEnabled(true);
-        this.SetState(EGameFlowState.CollectGold);
-        if (this.player && this.sandRunTarget) {
-            this.player.RunAutomaticallyTo(this.sandRunTarget);
+
+        if (this.state === EGameFlowState.GoToSand) {
+            this.SetState(EGameFlowState.CollectGold);
+            if (this.player && this.sandRunTarget) {
+                this.player.RunAutomaticallyTo(this.sandRunTarget);
+            }
         }
     }
 
     private OnSandExit(): void {
-        if (this.state !== EGameFlowState.CollectGold) {
-            return;
-        }
-
-        if ((this.inventory?.GetCount(EItemType.GoldOre) ?? 0) > 0) {
-            this.SetState(EGameFlowState.GoToExchange);
-        } else {
-            this.SetState(EGameFlowState.GoToSand);
+        if (this.state === EGameFlowState.CollectGold) {
+            if ((this.inventory?.GetCount(EItemType.GoldOre) ?? 0) > 0) {
+                this.SetState(EGameFlowState.GoToExchange);
+            } else {
+                this.SetState(EGameFlowState.GoToSand);
+            }
         }
     }
 
     private OnExchangeEnter(): void {
-        if (this.state !== EGameFlowState.GoToExchange || !this.inventory || !this.cartQueue) {
+        if (!this.inventory || !this.cartQueue || this.exchangeInProgress) {
             return;
         }
 
         const available = this.inventory.GetCount(EItemType.GoldOre);
         const amount = Math.min(this.goldPerExchange, available);
         if (amount <= 0) {
-            this.SetState(EGameFlowState.GoToSand);
+            if (this.state === EGameFlowState.GoToExchange) {
+                this.SetState(EGameFlowState.GoToSand);
+            }
             return;
         }
 
+        this.exchangeInProgress = true;
         this.SetState(EGameFlowState.ExchangeGold);
         this.TransferGoldToCart(amount);
     }
@@ -241,6 +242,7 @@ export class GameFlowController extends Component {
             this.moneyStorage?.Receive(EItemType.Money, 1);
             completed++;
             if (completed >= amount) {
+                this.exchangeInProgress = false;
                 this.SetState(EGameFlowState.GoToStorage);
             }
         };
@@ -255,7 +257,7 @@ export class GameFlowController extends Component {
     }
 
     private OnStorageEnter(): void {
-        if (this.state !== EGameFlowState.GoToStorage || !this.moneyStorage || !this.inventory) {
+        if (!this.moneyStorage || !this.inventory) {
             return;
         }
 
@@ -270,7 +272,7 @@ export class GameFlowController extends Component {
     }
 
     private OnUpgradeShopEnter(): void {
-        if (this.state !== EGameFlowState.GoToUpgradeShop || !this.upgradeShop || !this.inventory) {
+        if (!this.upgradeShop || !this.inventory) {
             return;
         }
 

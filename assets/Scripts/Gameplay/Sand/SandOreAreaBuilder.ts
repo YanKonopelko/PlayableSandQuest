@@ -15,6 +15,9 @@ export class SandOreAreaBuilder extends Component {
     @property({ type: Prefab, tooltip: 'Ore visual prefab instantiated for every generated piece.' })
     public orePrefab: Prefab | null = null;
 
+    @property({ type: Prefab})
+    public flyPrefab: Prefab | null = null;
+
     @property(Node)
     public flyTarget: Node | null = null;
 
@@ -154,7 +157,7 @@ export class SandOreAreaBuilder extends Component {
             const ore = oreNode.getComponent(SandCollectableOre) ?? oreNode.addComponent(SandCollectableOre);
             ore.resultItem = this.resultItem;
             ore.collectRadius = this.collectRadius;
-            ore.flyVisualPrefab = prefab;
+            ore.flyVisualPrefab = this.flyPrefab;
             ore.flyTarget = this.flyTarget;
             ore.playerInventory = this.playerInventory;
             ore.flyService = this.flyService;

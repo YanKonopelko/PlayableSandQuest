@@ -10,9 +10,6 @@ export class PlayerInventory extends Component {
     public goldOreStack: ItemStackView | null = null;
 
     @property(ItemStackView)
-    public ingotStack: ItemStackView | null = null;
-
-    @property(ItemStackView)
     public moneyStack: ItemStackView | null = null;
 
     private readonly counts: number[] = [0, 0, 0];
@@ -47,7 +44,6 @@ export class PlayerInventory extends Component {
 
     protected start(): void {
         this.goldOreStack?.SetCount(this.GetCount(EItemType.GoldOre), false);
-        this.ingotStack?.SetCount(this.GetCount(EItemType.Ingot), false);
         this.moneyStack?.SetCount(this.GetCount(EItemType.Money), false);
     }
 
@@ -55,8 +51,6 @@ export class PlayerInventory extends Component {
         switch (itemType) {
             case EItemType.GoldOre:
                 return this.goldOreStack;
-            case EItemType.Ingot:
-                return this.ingotStack;
             case EItemType.Money:
                 return this.moneyStack;
             default:

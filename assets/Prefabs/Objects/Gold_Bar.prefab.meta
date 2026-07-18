@@ -2,13 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "ea3f2a3f-b81c-4af6-9979-83be778c9400",
+  "uuid": "dea9d689-7aa5-4930-9880-b65ec361fe8d",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "MoneyItem",
-    "hasIcon": false
+    "syncNodeName": "Gold_Bar"
   }
 }
