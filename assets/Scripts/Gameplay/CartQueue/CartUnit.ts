@@ -15,8 +15,8 @@ export class CartUnit extends Component {
     @property({ type: CCInteger })
     public requiredGold: number = 4;
 
-    @property({ type: CCFloat })
-    public moveDurationPerPoint: number = 0.35;
+    @property({ type: CCFloat, min: 0.01 })
+    public moveSpeed: number = 5.7;
 
     public readonly onFilled: CustomActionWithParam<CartUnit> = new CustomActionWithParam<CartUnit>();
     public readonly onRouteFinished: CustomActionWithParam<CartUnit> = new CustomActionWithParam<CartUnit>();
@@ -60,6 +60,19 @@ export class CartUnit extends Component {
         this.MoveToPoint(points, 0);
     }
 
+    public MoveTo(target: Node, onComplete?: () => void): boolean {
+        if (this.moving) {
+            return false;
+        }
+
+        this.moving = true;
+        this.TweenTo(target.worldPosition.clone(), () => {
+            this.moving = false;
+            onComplete?.();
+        });
+        return true;
+    }
+
     private MoveToPoint(points: Node[], index: number): void {
         if (index >= points.length) {
             this.moving = false;
@@ -73,9 +86,16 @@ export class CartUnit extends Component {
             return;
         }
 
+        this.TweenTo(target.worldPosition.clone(), () => this.MoveToPoint(points, index + 1));
+    }
+
+    private TweenTo(targetPosition: Vec3, onComplete: () => void): void {
+        const distance = Vec3.distance(this.node.worldPosition, targetPosition);
+        const duration = distance / Math.max(this.moveSpeed, 0.01);
+
         tween(this.node)
-            .to(this.moveDurationPerPoint, { worldPosition: target.worldPosition.clone() }, { easing: 'sineInOut' })
-            .call(() => this.MoveToPoint(points, index + 1))
+            .to(duration, { worldPosition: targetPosition }, { easing: 'linear' })
+            .call(onComplete)
             .start();
     }
 }

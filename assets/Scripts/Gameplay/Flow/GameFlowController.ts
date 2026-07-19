@@ -1,5 +1,6 @@
 import { _decorator, CCInteger, Component, Enum, EventTouch, input, Input, Node, Prefab, Vec3 } from 'cc';
 import { CartQueueController } from '../CartQueue/CartQueueController';
+import { CartUnit } from '../CartQueue/CartUnit';
 import { HintController } from '../Hints/HintController';
 import { HintTarget } from '../Hints/HintTarget';
 import { Interactor } from '../Interaction/Interactor';
@@ -136,6 +137,8 @@ export class GameFlowController extends Component {
         this.sandInteractor?.onPlayerEnter.Subscribe(this.OnSandEnter, this);
         this.sandField?.onPlayerExit.Subscribe(this.OnSandExit, this);
         this.exchangeInteractor?.onPlayerEnter.Subscribe(this.OnExchangeEnter, this);
+        this.exchangeInteractor?.onPlayerExit.Subscribe(this.OnExchangeExit, this);
+        this.cartQueue?.onActiveCartReady.Subscribe(this.OnActiveCartReady, this);
         this.moneyStorage?.onPlayerEnter.Subscribe(this.OnStorageEnter, this);
         this.upgradeShop?.onPlayerEnter.Subscribe(this.OnUpgradeShopEnter, this);
         this.upgradeShop?.onPurchased.Subscribe(this.OnUpgradePurchased, this);
@@ -199,39 +202,74 @@ export class GameFlowController extends Component {
     }
 
     private OnExchangeEnter(): void {
-        if (!this.inventory || !this.cartQueue || this.exchangeInProgress) {
+        if (!this.inventory || !this.cartQueue) {
             return;
         }
 
         const available = this.inventory.GetCount(EItemType.GoldOre);
-        const amount = Math.min(this.goldPerExchange, available);
-        if (amount <= 0) {
+        if (available <= 0) {
             if (this.state === EGameFlowState.GoToExchange) {
                 this.SetState(EGameFlowState.GoToSand);
             }
             return;
         }
 
+        this.TryStartExchange();
+    }
+
+    private TryStartExchange(): boolean {
+        if (!this.inventory || !this.cartQueue || this.exchangeInProgress || !this.exchangeInteractor?.IsPlayerInside) {
+            return false;
+        }
+
+        const activeCart = this.cartQueue.ActiveCart;
+        const available = this.inventory.GetCount(EItemType.GoldOre);
+        if (!activeCart || available <= 0) {
+            return false;
+        }
+
+        if (!this.cartQueue.IsActiveCartReady) {
+            this.SetState(EGameFlowState.ExchangeGold);
+            return false;
+        }
+
+        const cartCapacity = Math.max(0, activeCart.requiredGold - activeCart.Gold);
+        const amount = Math.min(this.goldPerExchange, available, cartCapacity);
+        if (amount <= 0) {
+            return false;
+        }
+
         this.exchangeInProgress = true;
         this.SetState(EGameFlowState.ExchangeGold);
         this.TransferGoldToCart(amount);
+        return true;
     }
 
     private TransferGoldToCart(amount: number): void {
         const activeCart = this.cartQueue?.ActiveCart;
         const target = activeCart?.receivePivot ?? activeCart?.node;
         const start = this.playerItemFlyStart?.worldPosition ?? this.player?.node.worldPosition ?? new Vec3();
+        let transferred = 0;
 
         for (let i = 0; i < amount; i++) {
+            if (!this.cartQueue?.TryGiveGold(1)) {
+                break;
+            }
+
             this.inventory?.TryRemove(EItemType.GoldOre, 1);
-            this.cartQueue?.TryGiveGold(1);
+            transferred++;
 
             if (this.flyService && this.goldFlyPrefab && target) {
                 this.flyService.FlyPrefabToNode(this.goldFlyPrefab, start.clone(), target, undefined, 0.25 + i * 0.03);
             }
         }
 
-        this.GiveMoneyAfterExchange(amount);
+        if (transferred > 0) {
+            this.GiveMoneyAfterExchange(transferred);
+            return;
+        }
+
+        this.exchangeInProgress = false;
     }
 
     private GiveMoneyAfterExchange(amount: number): void {
@@ -243,7 +281,7 @@ export class GameFlowController extends Component {
             completed++;
             if (completed >= amount) {
                 this.exchangeInProgress = false;
-                this.SetState(EGameFlowState.GoToStorage);
+                this.ContinueExchangeOrLeave();
             }
         };
 
@@ -253,6 +291,29 @@ export class GameFlowController extends Component {
             } else {
                 onOneMoneyArrived();
             }
+        }
+    }
+
+    private ContinueExchangeOrLeave(): void {
+        const hasGold = (this.inventory?.GetCount(EItemType.GoldOre) ?? 0) > 0;
+        if (this.exchangeInteractor?.IsPlayerInside && hasGold) {
+            this.SetState(EGameFlowState.ExchangeGold);
+            this.TryStartExchange();
+            return;
+        }
+
+        this.SetState(EGameFlowState.GoToStorage);
+    }
+
+    private OnActiveCartReady(_cart: CartUnit): void {
+        if (this.exchangeInteractor?.IsPlayerInside) {
+            this.TryStartExchange();
+        }
+    }
+
+    private OnExchangeExit(): void {
+        if (this.state === EGameFlowState.ExchangeGold && !this.exchangeInProgress) {
+            this.SetState(EGameFlowState.GoToStorage);
         }
     }
 

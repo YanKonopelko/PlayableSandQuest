@@ -1,4 +1,5 @@
-import { _decorator, CCInteger, Component, instantiate, Node, Prefab, tween } from 'cc';
+import { _decorator, CCInteger, Component, instantiate, Node, Prefab } from 'cc';
+import { CustomActionWithParam } from '../../Utills/CustomActions';
 import { CartUnit } from './CartUnit';
 
 const { ccclass, property } = _decorator;
@@ -38,10 +39,17 @@ export class CartQueueController extends Component {
     @property({ type: CCInteger })
     public goldPerCart: number = 4;
 
+    public readonly onActiveCartReady: CustomActionWithParam<CartUnit> = new CustomActionWithParam<CartUnit>();
+
     private units: CartUnit[] = [];
+    private activeCartReady: boolean = false;
 
     public get ActiveCart(): CartUnit | null {
         return this.units.length > 0 ? this.units[0] : null;
+    }
+
+    public get IsActiveCartReady(): boolean {
+        return this.activeCartReady;
     }
 
     protected start(): void {
@@ -50,7 +58,7 @@ export class CartQueueController extends Component {
 
     public TryGiveGold(amount: number = 1): boolean {
         const cart = this.ActiveCart;
-        if (!cart) {
+        if (!cart || !this.activeCartReady || cart.IsFilled || amount <= 0) {
             return false;
         }
 
@@ -72,6 +80,8 @@ export class CartQueueController extends Component {
                 this.units.push(unit);
             }
         }
+
+        this.SetActiveCartReady(this.ActiveCart);
     }
 
     private CreateUnitAt(queueIndex: number): CartUnit | null {
@@ -103,24 +113,50 @@ export class CartQueueController extends Component {
             return;
         }
 
+        this.activeCartReady = false;
         this.units.shift();
         unit.MoveAlong(this.GetExitPoints());
         this.ShiftQueueForward();
-        this.SpawnBackUnit();
     }
 
     private ShiftQueueForward(): void {
         const queuePoints = this.GetQueuePoints();
+        let movesRemaining = this.units.length;
+
+        if (movesRemaining === 0) {
+            this.CompleteQueueShift();
+            return;
+        }
+
         for (let i = 0; i < this.units.length; i++) {
             const point = queuePoints[i];
             if (!point) {
+                movesRemaining--;
+                if (movesRemaining === 0) {
+                    this.CompleteQueueShift();
+                }
                 continue;
             }
 
-            tween(this.units[i].node)
-                .to(0.35, { worldPosition: point.worldPosition.clone() }, { easing: 'sineInOut' })
-                .start();
+            const started = this.units[i].MoveTo(point, () => {
+                movesRemaining--;
+                if (movesRemaining === 0) {
+                    this.CompleteQueueShift();
+                }
+            });
+
+            if (!started) {
+                movesRemaining--;
+                if (movesRemaining === 0) {
+                    this.CompleteQueueShift();
+                }
+            }
         }
+    }
+
+    private CompleteQueueShift(): void {
+        this.SpawnBackUnit();
+        this.SetActiveCartReady(this.ActiveCart);
     }
 
     private SpawnBackUnit(): void {
@@ -133,6 +169,13 @@ export class CartQueueController extends Component {
 
     private OnCartRouteFinished(unit: CartUnit): void {
         unit.node.destroy();
+    }
+
+    private SetActiveCartReady(cart: CartUnit | null): void {
+        this.activeCartReady = cart !== null;
+        if (cart) {
+            this.onActiveCartReady.Invoke(cart);
+        }
     }
 
     private GetQueuePoints(): Node[] {
