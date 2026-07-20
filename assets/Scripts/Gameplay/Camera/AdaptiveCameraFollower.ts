@@ -1,4 +1,4 @@
-import { _decorator, Camera, CCFloat, Component, Node, Quat, Vec3, view } from 'cc';
+import { _decorator, Camera, CCFloat, Component, Node, Vec3, view } from 'cc';
 import { RequiredReference } from '../Core/RequiredReference';
 
 const { ccclass, property } = _decorator;
@@ -12,10 +12,10 @@ export class AdaptiveCameraFollower extends Component {
     public camera: Camera | null = null;
 
     @property({ type: CCFloat })
-    public baseHeight: number = 7.5;
+    public baseHeight: number = 11.5;
 
     @property({ type: CCFloat })
-    public baseDistance: number = 7.5;
+    public baseDistance: number = 11.5;
 
     @property({ type: CCFloat })
     public wideDistanceBonus: number = 4;
@@ -30,12 +30,11 @@ export class AdaptiveCameraFollower extends Component {
     public followLerp: number = 8;
 
     @property({ type: CCFloat })
-    public pitch: number = -48;
-
-    @property({ type: CCFloat })
-    public yaw: number = 0;
+    public yaw: number = -45;
 
     private readonly targetPosition: Vec3 = new Vec3();
+    private readonly desiredPosition: Vec3 = new Vec3();
+    private readonly nextPosition: Vec3 = new Vec3();
     private readonly offset: Vec3 = new Vec3();
 
     protected onLoad(): void {
@@ -53,20 +52,17 @@ export class AdaptiveCameraFollower extends Component {
         const aspect = this.GetAspect();
         const normalizedWide = Math.max(0, Math.min(1, (aspect - this.minAspect) / Math.max(0.001, this.maxAspect - this.minAspect)));
         const distance = this.baseDistance + this.wideDistanceBonus * normalizedWide;
+        const yawRadians = this.yaw * Math.PI / 180;
 
-        this.offset.set(0, this.baseHeight, distance);
+        this.offset.set(Math.sin(yawRadians) * distance, this.baseHeight, Math.cos(yawRadians) * distance);
         this.target.getWorldPosition(this.targetPosition);
-        this.targetPosition.add(this.offset);
+        Vec3.add(this.desiredPosition, this.targetPosition, this.offset);
 
         const current = this.node.worldPosition;
         const lerp = Math.min(1, this.followLerp * dt);
-        const next = new Vec3();
-        Vec3.lerp(next, current, this.targetPosition, lerp);
-        this.node.setWorldPosition(next);
-
-        const rotation = new Quat();
-        Quat.fromEuler(rotation, this.pitch, this.yaw, 0);
-        this.node.setWorldRotation(rotation);
+        Vec3.lerp(this.nextPosition, current, this.desiredPosition, lerp);
+        this.node.setWorldPosition(this.nextPosition);
+        this.node.lookAt(this.targetPosition, Vec3.UP);
     }
 
     private GetAspect(): number {

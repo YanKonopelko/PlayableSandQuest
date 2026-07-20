@@ -1,0 +1,41 @@
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: legacy/main-functions/general-vs:vert
+      frag: ground-baked-fs:frag
+      properties:
+        mainTexture: { value: white }
+        mainColor:   { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+        bakeUvTransform: { value: [1.0, 1.0, 0.0, 0.0] }
+        brightness:  { value: 1.0, editor: { range: [0.5, 1.5, 0.01], slide: true } }
+}%
+
+CCProgram ground-baked-fs %{
+  precision mediump float;
+  #include <legacy/output>
+  #include <legacy/fog-fs>
+
+  in vec2 v_uv;
+  in vec3 v_position;
+
+  uniform sampler2D mainTexture;
+
+  uniform Constant {
+    vec4 mainColor;
+    vec4 bakeUvTransform;
+    float brightness;
+  };
+
+  vec4 frag () {
+    vec2 bakedUv = clamp(
+      (v_uv - vec2(0.5)) * bakeUvTransform.xy + vec2(0.5) + bakeUvTransform.zw,
+      vec2(0.0),
+      vec2(1.0)
+    );
+    vec4 color = texture(mainTexture, bakedUv) * mainColor;
+    color.rgb *= brightness;
+    CC_APPLY_FOG(color, v_position);
+    return CCFragOutput(color);
+  }
+}%

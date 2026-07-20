@@ -113,6 +113,7 @@ export class CartQueueController extends Component {
             return;
         }
 
+        unit.SetWaiting(false);
         this.activeCartReady = false;
         this.units.shift();
         unit.MoveAlong(this.GetExitPoints());
@@ -174,6 +175,7 @@ export class CartQueueController extends Component {
     private SetActiveCartReady(cart: CartUnit | null): void {
         this.activeCartReady = cart !== null;
         if (cart) {
+            cart.SetWaiting(true);
             this.onActiveCartReady.Invoke(cart);
         }
     }

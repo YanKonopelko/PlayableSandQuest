@@ -1,0 +1,34 @@
+CCEffect %{
+  techniques:
+  - name: transparent
+    passes:
+    - vert: legacy/main-functions/general-vs:vert
+      frag: ground-path-preview-fs:frag
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: true
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: one
+          blendDstAlpha: one_minus_src_alpha
+      properties:
+        mainColor: { value: [0.38, 0.16, 0.07, 0.72], editor: { type: color } }
+}%
+
+CCProgram ground-path-preview-fs %{
+  precision mediump float;
+  #include <legacy/output>
+
+  uniform Constant {
+    vec4 mainColor;
+  };
+
+  vec4 frag () {
+    return CCFragOutput(mainColor);
+  }
+}%

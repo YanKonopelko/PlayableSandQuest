@@ -1,0 +1,57 @@
+{
+  "package_version": 2,
+  "name": "ground-path-baker",
+  "version": "1.0.0",
+  "author": "PlayableSandQuest",
+  "editor": ">=3.8.7",
+  "description": "Editor-authored and baked clay ground paths",
+  "main": "./dist/main.js",
+  "contributions": {
+    "menu": [
+      {
+        "path": "Ground Paths",
+        "label": "Setup Selected Floor",
+        "message": "setup-selected-floor"
+      },
+      {
+        "path": "Ground Paths",
+        "label": "Add Path",
+        "message": "add-path"
+      },
+      {
+        "path": "Ground Paths",
+        "label": "Add Point",
+        "message": "add-point"
+      },
+      {
+        "path": "Ground Paths",
+        "label": "Bake Selected Floor",
+        "message": "bake-selected-floor"
+      }
+    ],
+    "messages": {
+      "setup-selected-floor": {
+        "methods": ["setupSelectedFloor"]
+      },
+      "add-path": {
+        "methods": ["addPath"]
+      },
+      "add-point": {
+        "methods": ["addPoint"]
+      },
+      "bake-selected-floor": {
+        "methods": ["bakeSelectedFloor"]
+      }
+    },
+    "scene": {
+      "script": "./dist/scene.js",
+      "methods": [
+        "setupFloor",
+        "addPath",
+        "addPoint",
+        "bakeGround",
+        "applyBakedTexture"
+      ]
+    }
+  }
+}
