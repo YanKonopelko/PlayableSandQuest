@@ -170,6 +170,8 @@ export class GameFlowController extends Component {
                 break;
             case EGameFlowState.AwaitFinalTap:
                 this.hints?.Hide();
+                this.player?.SetMovementEnabled(false);
+                this.player?.joystick?.ShowFinalTutorial();
                 this.ArmFinalTap();
                 break;
             case EGameFlowState.Packshot:

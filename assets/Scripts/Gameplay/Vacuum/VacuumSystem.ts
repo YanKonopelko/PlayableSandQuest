@@ -21,6 +21,9 @@ export class VacuumSystem extends Component {
     @property(Node)
     public playerFacingRoot: Node | null = null;
 
+    @property(Node)
+    public backpackTubeRoot: Node | null = null;
+
     @property(Prefab)
     public tubePartPrefab: Prefab | null = null;
 
@@ -85,6 +88,8 @@ export class VacuumSystem extends Component {
         RequiredReference.CheckNode(this, this.tubeHeadHomePivot, 'tubeHeadHomePivot');
         RequiredReference.CheckNode(this, this.playerHandPivot, 'playerHandPivot');
         RequiredReference.CheckNode(this, this.playerFacingRoot, 'playerFacingRoot');
+        this.backpackTubeRoot ??= this.FindDescendantByName(this.playerFacingRoot, 'TubeRoot');
+        RequiredReference.CheckNode(this, this.backpackTubeRoot, 'backpackTubeRoot');
         RequiredReference.Check(this, this.tubePartPrefab, 'tubePartPrefab');
         RequiredReference.CheckNode(this, this.tubePartsRoot, 'tubePartsRoot');
         this.SnapHeadHome();
@@ -231,12 +236,12 @@ export class VacuumSystem extends Component {
     }
 
     private RebuildTube(): void {
-        if (!this.machinePivot || !this.tubeHead) {
+        if (!this.machinePivot || !this.backpackTubeRoot) {
             return;
         }
 
         const start = this.machinePivot.worldPosition;
-        const end = this.tubeHead.worldPosition;
+        const end = this.backpackTubeRoot.worldPosition;
         const distance = Vec3.distance(start, end);
         const count = Math.max(1, Math.ceil(distance / Math.max(0.1, this.segmentLength)));
         this.EnsureSegmentCount(count);
@@ -321,5 +326,22 @@ export class VacuumSystem extends Component {
         for (const renderer of renderers) {
             renderer.setMaterial(material, 0);
         }
+    }
+
+    private FindDescendantByName(root: Node | null, name: string): Node | null {
+        if (!root) {
+            return null;
+        }
+        if (root.name === name) {
+            return root;
+        }
+
+        for (const child of root.children) {
+            const match = this.FindDescendantByName(child, name);
+            if (match) {
+                return match;
+            }
+        }
+        return null;
     }
 }

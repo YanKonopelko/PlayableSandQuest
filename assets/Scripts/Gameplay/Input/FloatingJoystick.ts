@@ -1,7 +1,9 @@
-import { _decorator, Camera, CCFloat, Component, EventTouch, input, Input, Node, Vec2, Vec3 } from 'cc';
+import { _decorator, Animation, Camera, CCFloat, Component, EventTouch, input, Input, Node, Vec2, Vec3 } from 'cc';
 import { RequiredReference } from '../Core/RequiredReference';
 
 const { ccclass, property } = _decorator;
+const JOYSTICK_TUTORIAL_CLIP = 'JoystickTutorial';
+const HORIZONTAL_JOYSTICK_TUTORIAL_CLIP = 'HorizontalJoystickTutorial';
 
 @ccclass('FloatingJoystick')
 export class FloatingJoystick extends Component {
@@ -17,12 +19,19 @@ export class FloatingJoystick extends Component {
     @property({ type: CCFloat })
     public radius: number = 90;
 
+    @property({ type: CCFloat, min: 0 })
+    public idleTutorialDelay: number = 5;
+
     private pointerId: number = -1;
     private readonly origin: Vec3 = new Vec3();
     private readonly direction: Vec2 = new Vec2();
     private readonly screenPosition: Vec3 = new Vec3();
     private readonly worldPosition: Vec3 = new Vec3();
     private isPressed: boolean = false;
+    private inputEnabled: boolean = true;
+    private finalTutorialShown: boolean = false;
+    private tutorialAnimation: Animation | null = null;
+    private tutorialText: Node | null = null;
 
     public get Direction(): Vec2 {
         return this.direction;
@@ -36,7 +45,13 @@ export class FloatingJoystick extends Component {
         RequiredReference.CheckNode(this, this.baseNode, 'baseNode');
         RequiredReference.CheckNode(this, this.handleNode, 'handleNode');
         RequiredReference.Check(this, this.camera, 'camera');
+        this.tutorialAnimation = this.getComponent(Animation);
+        this.tutorialText = this.baseNode?.getChildByName('TutorialText') ?? null;
         this.SetVisible(false);
+    }
+
+    protected start(): void {
+        this.ShowTutorial(JOYSTICK_TUTORIAL_CLIP);
     }
 
     protected onEnable(): void {
@@ -51,13 +66,16 @@ export class FloatingJoystick extends Component {
         input.off(Input.EventType.TOUCH_MOVE, this.OnTouchMove, this);
         input.off(Input.EventType.TOUCH_END, this.OnTouchEnd, this);
         input.off(Input.EventType.TOUCH_CANCEL, this.OnTouchEnd, this);
+        this.unschedule(this.ShowIdleTutorial);
     }
 
     private OnTouchStart(event: EventTouch): void {
-        if (this.isPressed || !this.camera || !this.baseNode || !this.handleNode) {
+        if (!this.inputEnabled || this.isPressed || !this.camera || !this.baseNode || !this.handleNode) {
             return;
         }
 
+        this.unschedule(this.ShowIdleTutorial);
+        this.HideTutorial();
         this.pointerId = event.getID();
         this.isPressed = true;
 
@@ -112,6 +130,57 @@ export class FloatingJoystick extends Component {
         this.isPressed = false;
         this.direction.set(0, 0);
         this.SetVisible(false);
+        this.ScheduleIdleTutorial();
+    }
+
+    public ShowFinalTutorial(): void {
+        if (this.finalTutorialShown) {
+            return;
+        }
+
+        this.finalTutorialShown = true;
+        this.inputEnabled = false;
+        this.pointerId = -1;
+        this.isPressed = false;
+        this.direction.set(0, 0);
+        this.unschedule(this.ShowIdleTutorial);
+        this.ShowTutorial(HORIZONTAL_JOYSTICK_TUTORIAL_CLIP);
+    }
+
+    private ScheduleIdleTutorial(): void {
+        if (!this.inputEnabled || this.finalTutorialShown) {
+            return;
+        }
+
+        this.unschedule(this.ShowIdleTutorial);
+        this.scheduleOnce(this.ShowIdleTutorial, Math.max(0, this.idleTutorialDelay));
+    }
+
+    private ShowIdleTutorial(): void {
+        if (!this.inputEnabled || this.finalTutorialShown || this.isPressed) {
+            return;
+        }
+
+        this.ShowTutorial(JOYSTICK_TUTORIAL_CLIP);
+    }
+
+    private ShowTutorial(clipName: string): void {
+        this.SetVisible(true);
+        if (this.tutorialText) {
+            this.tutorialText.active = true;
+        }
+
+        const animation = this.tutorialAnimation;
+        if (animation?.clips.some(clip => clip.name === clipName)) {
+            animation.play(clipName);
+        }
+    }
+
+    private HideTutorial(): void {
+        this.tutorialAnimation?.stop();
+        if (this.tutorialText) {
+            this.tutorialText.active = false;
+        }
     }
 
     private SetVisible(value: boolean): void {

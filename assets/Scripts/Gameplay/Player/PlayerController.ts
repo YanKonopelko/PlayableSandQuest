@@ -17,6 +17,9 @@ export class PlayerController extends Component {
     @property(Node)
     public visualRoot: Node | null = null;
 
+    @property(Node)
+    public backpackRoot: Node | null = null;
+
     @property(PlayerAnimationController)
     public animationController: PlayerAnimationController | null = null;
 
@@ -76,6 +79,10 @@ export class PlayerController extends Component {
         if (!this.visualRoot) {
             this.visualRoot = this.movementRoot;
         }
+
+        this.backpackRoot ??= this.FindDescendantByName(this.visualRoot, 'Backpack');
+        RequiredReference.CheckNode(this, this.backpackRoot, 'backpackRoot');
+        this.SetBackpackActive(false);
     }
 
     protected update(dt: number): void {
@@ -138,6 +145,7 @@ export class PlayerController extends Component {
 
     public SetVacuumVisualEnabled(value: boolean): void {
         this.animationController?.SetVacuumEnabled(value);
+        this.SetBackpackActive(value);
     }
 
     public RunAutomaticallyTo(target: Node, onComplete?: () => void): void {
@@ -362,5 +370,28 @@ export class PlayerController extends Component {
     private LerpAngle(a: number, b: number, t: number): number {
         let delta = (b - a + 540) % 360 - 180;
         return a + delta * t;
+    }
+
+    private SetBackpackActive(value: boolean): void {
+        if (this.backpackRoot) {
+            this.backpackRoot.active = value;
+        }
+    }
+
+    private FindDescendantByName(root: Node | null, name: string): Node | null {
+        if (!root) {
+            return null;
+        }
+        if (root.name === name) {
+            return root;
+        }
+
+        for (const child of root.children) {
+            const match = this.FindDescendantByName(child, name);
+            if (match) {
+                return match;
+            }
+        }
+        return null;
     }
 }
