@@ -13,6 +13,9 @@ export class FloatingJoystick extends Component {
     @property(Node)
     public handleNode: Node | null = null;
 
+    @property(Node)
+    public tutorialRoot: Node | null = null;
+
     @property(Camera)
     public camera: Camera | null = null;
 
@@ -44,10 +47,15 @@ export class FloatingJoystick extends Component {
     protected onLoad(): void {
         RequiredReference.CheckNode(this, this.baseNode, 'baseNode');
         RequiredReference.CheckNode(this, this.handleNode, 'handleNode');
+        this.tutorialRoot ??= this.node.parent?.getChildByName('TutorialJoystick') ?? null;
+        RequiredReference.CheckNode(this, this.tutorialRoot, 'tutorialRoot');
         RequiredReference.Check(this, this.camera, 'camera');
-        this.tutorialAnimation = this.getComponent(Animation);
-        this.tutorialText = this.baseNode?.getChildByName('TutorialText') ?? null;
+        this.tutorialAnimation = this.tutorialRoot?.getComponent(Animation) ?? null;
+        this.tutorialText = this.tutorialRoot
+            ?.getChildByName('Back')
+            ?.getChildByName('TutorialText') ?? null;
         this.SetVisible(false);
+        this.SetTutorialVisible(false);
     }
 
     protected start(): void {
@@ -144,6 +152,7 @@ export class FloatingJoystick extends Component {
         this.isPressed = false;
         this.direction.set(0, 0);
         this.unschedule(this.ShowIdleTutorial);
+        this.SetVisible(false);
         this.ShowTutorial(HORIZONTAL_JOYSTICK_TUTORIAL_CLIP);
     }
 
@@ -165,7 +174,7 @@ export class FloatingJoystick extends Component {
     }
 
     private ShowTutorial(clipName: string): void {
-        this.SetVisible(true);
+        this.SetTutorialVisible(true);
         if (this.tutorialText) {
             this.tutorialText.active = true;
         }
@@ -180,6 +189,13 @@ export class FloatingJoystick extends Component {
         this.tutorialAnimation?.stop();
         if (this.tutorialText) {
             this.tutorialText.active = false;
+        }
+        this.SetTutorialVisible(false);
+    }
+
+    private SetTutorialVisible(value: boolean): void {
+        if (this.tutorialRoot) {
+            this.tutorialRoot.active = value;
         }
     }
 

@@ -11,7 +11,13 @@ export class SandCollectableOre extends Component {
     public resultItem: EItemType = EItemType.GoldOre;
 
     @property({ type: CCFloat })
-    public collectRadius: number = 0.65;
+    public collectRadius: number = 1.65;
+
+    @property({ type: CCFloat })
+    public collectFlyDuration: number = 0.65;
+
+    @property({ type: CCFloat })
+    public collectFlyArcHeight: number = 7.0;
 
     @property(Prefab)
     public flyVisualPrefab: Prefab | null = null;
@@ -57,7 +63,14 @@ export class SandCollectableOre extends Component {
         const complete = () => this.playerInventory?.Add(this.resultItem, 1);
 
         if (this.flyService && this.flyVisualPrefab && this.flyTarget) {
-            this.flyService.FlyPrefabToNode(this.flyVisualPrefab, start, this.flyTarget, complete);
+            this.flyService.FlyPrefabToNode(
+                this.flyVisualPrefab,
+                start,
+                this.flyTarget,
+                complete,
+                this.collectFlyDuration,
+                this.collectFlyArcHeight,
+            );
         } else {
             complete();
         }

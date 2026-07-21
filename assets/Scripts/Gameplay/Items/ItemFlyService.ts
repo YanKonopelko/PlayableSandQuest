@@ -19,7 +19,14 @@ export class ItemFlyService extends Component {
         RequiredReference.CheckNode(this, this.flyRoot, 'flyRoot');
     }
 
-    public FlyPrefabToNode(prefab: Prefab, fromWorld: Vec3, target: Node, onComplete?: () => void, duration: number = this.defaultDuration): Node | null {
+    public FlyPrefabToNode(
+        prefab: Prefab,
+        fromWorld: Vec3,
+        target: Node,
+        onComplete?: () => void,
+        duration: number = this.defaultDuration,
+        arcHeight: number = this.defaultArcHeight,
+    ): Node | null {
         if (!this.flyRoot || !prefab || !target) {
             console.error('[ItemFlyService] Missing flyRoot, prefab or target.');
             return null;
@@ -31,7 +38,7 @@ export class ItemFlyService extends Component {
 
         TweenUtils.FlyTweenWithMidlePointAndScaleToNode(
             item,
-            new Vec3(0, this.defaultArcHeight, 0),
+            new Vec3(0, arcHeight, 0),
             target,
             1.25,
             () => {
@@ -44,7 +51,13 @@ export class ItemFlyService extends Component {
         return item;
     }
 
-    public FlyExistingToNode(item: Node, target: Node, onComplete?: () => void, duration: number = this.defaultDuration): void {
+    public FlyExistingToNode(
+        item: Node,
+        target: Node,
+        onComplete?: () => void,
+        duration: number = this.defaultDuration,
+        arcHeight: number = this.defaultArcHeight,
+    ): void {
         if (!item || !target) {
             console.error('[ItemFlyService] Missing item or target.');
             return;
@@ -52,7 +65,7 @@ export class ItemFlyService extends Component {
 
         TweenUtils.FlyTweenWithMidlePointAndScaleToNode(
             item,
-            new Vec3(0, this.defaultArcHeight, 0),
+            new Vec3(0, arcHeight, 0),
             target,
             1.25,
             () => onComplete && onComplete(),

@@ -25,23 +25,23 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 43
+        "__id__": 44
       },
       {
-        "__id__": 49
+        "__id__": 50
       },
       {
-        "__id__": 45
+        "__id__": 46
       },
       {
-        "__id__": 51
+        "__id__": 52
       },
       {
-        "__id__": 47
+        "__id__": 48
       }
     ],
     "_prefab": {
-      "__id__": 53
+      "__id__": 54
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -94,7 +94,7 @@
     "_active": true,
     "_components": [],
     "_prefab": {
-      "__id__": 42
+      "__id__": 43
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -366,7 +366,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": -0.125,
-      "y": -1.12,
+      "y": -1.307,
       "z": -0.597
     },
     "_lrot": {
@@ -455,7 +455,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": -0.125,
-      "y": -0.151,
+      "y": -0.794,
       "z": -0.597
     },
     "_lrot": {
@@ -703,7 +703,7 @@
         "__id__": 41
       },
       {
-        "__id__": 56
+        "__id__": 42
       }
     ],
     "removedComponents": []
@@ -863,6 +863,16 @@
     }
   },
   {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 37
+    },
+    "propertyPath": [
+      "_active"
+    ],
+    "value": false
+  },
+  {
     "__type__": "cc.PrefabInfo",
     "root": {
       "__id__": 1
@@ -885,7 +895,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 44
+      "__id__": 45
     },
     "joystick": null,
     "movementRoot": {
@@ -894,12 +904,13 @@
     "visualRoot": {
       "__id__": 2
     },
+    "backpackRoot": null,
     "animationController": {
-      "__id__": 45
+      "__id__": 46
     },
     "vacuumSystem": null,
     "movementCollider": {
-      "__id__": 47
+      "__id__": 48
     },
     "moveSpeed": 4.5,
     "minJoystickAcceleration": 0.35,
@@ -925,7 +936,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 46
+      "__id__": 47
     },
     "animation": null,
     "idleClipName": "?",
@@ -948,7 +959,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 48
+      "__id__": 49
     },
     "_material": null,
     "_isTrigger": false,
@@ -977,7 +988,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 50
+      "__id__": 51
     },
     "goldOreStack": {
       "__id__": 17
@@ -1001,7 +1012,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 52
+      "__id__": 53
     },
     "_group": 1,
     "_type": 4,
@@ -1040,7 +1051,7 @@
     "instance": null,
     "targetOverrides": [
       {
-        "__id__": 54
+        "__id__": 55
       }
     ],
     "nestedPrefabInstanceRoots": [
@@ -1055,7 +1066,7 @@
   {
     "__type__": "cc.TargetOverrideInfo",
     "source": {
-      "__id__": 45
+      "__id__": 46
     },
     "sourceInfo": null,
     "propertyPath": [
@@ -1065,7 +1076,7 @@
       "__id__": 3
     },
     "targetInfo": {
-      "__id__": 55
+      "__id__": 56
     }
   },
   {
@@ -1073,15 +1084,5 @@
     "localID": [
       "f0r23qJONScrHQ9Rq0PPKF"
     ]
-  },
-  {
-    "__type__": "CCPropertyOverrideInfo",
-    "targetInfo": {
-      "__id__": 37
-    },
-    "propertyPath": [
-      "_active"
-    ],
-    "value": false
   }
 ]

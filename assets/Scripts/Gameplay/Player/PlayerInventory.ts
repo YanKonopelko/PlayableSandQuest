@@ -12,6 +12,9 @@ export class PlayerInventory extends Component {
     @property(ItemStackView)
     public moneyStack: ItemStackView | null = null;
 
+    @property([ItemStackView])
+    public itemStacks: ItemStackView[] = [];
+
     private readonly counts: number[] = [0, 0, 0];
 
     public GetCount(itemType: EItemType): number {
@@ -24,7 +27,7 @@ export class PlayerInventory extends Component {
 
     public Add(itemType: EItemType, amount: number = 1): void {
         this.counts[itemType] = this.GetCount(itemType) + Math.max(0, amount);
-        this.GetStackView(itemType)?.SetCount(this.counts[itemType]);
+        this.RefreshStackViews(itemType);
     }
 
     public TryRemove(itemType: EItemType, amount: number = 1): boolean {
@@ -33,21 +36,25 @@ export class PlayerInventory extends Component {
         }
 
         this.counts[itemType] -= Math.max(0, amount);
-        this.GetStackView(itemType)?.SetCount(this.counts[itemType]);
+        this.RefreshStackViews(itemType);
         return true;
     }
 
     public Clear(itemType: EItemType): void {
         this.counts[itemType] = 0;
-        this.GetStackView(itemType)?.SetCount(0);
+        this.RefreshStackViews(itemType);
     }
 
     protected start(): void {
-        this.goldOreStack?.SetCount(this.GetCount(EItemType.GoldOre), false);
-        this.moneyStack?.SetCount(this.GetCount(EItemType.Money), false);
+        this.RefreshStackViews(null, false);
     }
 
     private GetStackView(itemType: EItemType): ItemStackView | null {
+        const configuredStack = this.itemStacks[itemType];
+        if (configuredStack) {
+            return configuredStack;
+        }
+
         switch (itemType) {
             case EItemType.GoldOre:
                 return this.goldOreStack;
@@ -55,6 +62,34 @@ export class PlayerInventory extends Component {
                 return this.moneyStack;
             default:
                 return null;
+        }
+    }
+
+    private RefreshStackViews(animatedItemType: EItemType | null, animate: boolean = true): void {
+        const stackViews: Array<{ itemType: EItemType; view: ItemStackView }> = [];
+        const itemTypeCount = Math.max(this.counts.length, this.itemStacks.length);
+
+        for (let index = 0; index < itemTypeCount; index++) {
+            const itemType = index as EItemType;
+            const view = this.GetStackView(itemType);
+            if (view && !stackViews.some((entry) => entry.view === view)) {
+                stackViews.push({ itemType, view });
+            }
+        }
+
+        const sharedRoot = stackViews.find((entry) => entry.view.root)?.view.root;
+        if (!sharedRoot) {
+            return;
+        }
+
+        let startHeight = 0;
+        for (const entry of stackViews) {
+            entry.view.ConfigureUnifiedStack(sharedRoot, startHeight);
+            entry.view.SetCount(
+                this.GetCount(entry.itemType),
+                animate && entry.itemType === animatedItemType,
+            );
+            startHeight += entry.view.VisibleInventoryStackHeight;
         }
     }
 }
