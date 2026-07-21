@@ -13,6 +13,9 @@ export class VacuumSystem extends Component {
     public machinePivot: Node | null = null;
 
     @property(Node)
+    public sandStartPoint: Node | null = null;
+
+    @property(Node)
     public tubeHeadHomePivot: Node | null = null;
 
     @property(Node)
@@ -85,6 +88,7 @@ export class VacuumSystem extends Component {
     protected onLoad(): void {
         RequiredReference.CheckNode(this, this.tubeHead, 'tubeHead');
         RequiredReference.CheckNode(this, this.machinePivot, 'machinePivot');
+        RequiredReference.CheckNode(this, this.sandStartPoint, 'sandStartPoint');
         RequiredReference.CheckNode(this, this.tubeHeadHomePivot, 'tubeHeadHomePivot');
         RequiredReference.CheckNode(this, this.playerHandPivot, 'playerHandPivot');
         RequiredReference.CheckNode(this, this.playerFacingRoot, 'playerFacingRoot');
@@ -184,12 +188,12 @@ export class VacuumSystem extends Component {
     }
 
     public GetLimitedPlayerPosition(desiredWorldPosition: Vec3): Vec3 {
-        if (!this.active || !this.machinePivot) {
+        if (!this.active || !this.sandStartPoint) {
             this.SetWarning(false);
             return desiredWorldPosition;
         }
 
-        const anchor = this.machinePivot.worldPosition;
+        const anchor = this.sandStartPoint.worldPosition;
         const dx = desiredWorldPosition.x - anchor.x;
         const dz = desiredWorldPosition.z - anchor.z;
         const distance = Math.sqrt(dx * dx + dz * dz);
