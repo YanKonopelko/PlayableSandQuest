@@ -1,6 +1,6 @@
 {
   "__type__": "cc.Material",
-  "_name": "GroundBaked",
+  "_name": "",
   "_objFlags": 0,
   "__editorExtras__": {},
   "_native": "",
@@ -25,6 +25,10 @@
   ],
   "_props": [
     {
+      "mainTexture": {
+        "__uuid__": "4e994843-f885-4c81-bf51-8520236cb633@6c48a",
+        "__expectedType__": "cc.Texture2D"
+      },
       "mainColor": {
         "__type__": "cc.Color",
         "r": 255,
@@ -32,14 +36,32 @@
         "b": 255,
         "a": 255
       },
+      "darkColor": {
+        "__type__": "cc.Color",
+        "r": 124,
+        "g": 59,
+        "b": 31,
+        "a": 255
+      },
+      "lightColor": {
+        "__type__": "cc.Color",
+        "r": 220,
+        "g": 136,
+        "b": 77,
+        "a": 255
+      },
+      "brightness": 1.0,
+      "macroScale": 0.16,
+      "detailScale": 1.35,
+      "grainScale": 7.0,
+      "grainStrength": 0.12,
       "bakeUvTransform": {
         "__type__": "cc.Vec4",
         "x": 1,
         "y": 1,
         "z": 0,
         "w": 0
-      },
-      "brightness": 1.0
+      }
     }
   ]
 }
