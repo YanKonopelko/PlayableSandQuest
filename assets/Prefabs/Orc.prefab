@@ -25,23 +25,23 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 30
+        "__id__": 39
       },
       {
-        "__id__": 36
+        "__id__": 45
       },
       {
-        "__id__": 32
+        "__id__": 41
       },
       {
-        "__id__": 38
+        "__id__": 47
       },
       {
-        "__id__": 34
+        "__id__": 43
       }
     ],
     "_prefab": {
-      "__id__": 40
+      "__id__": 49
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -86,12 +86,15 @@
       },
       {
         "__id__": 15
+      },
+      {
+        "__id__": 29
       }
     ],
     "_active": true,
     "_components": [],
     "_prefab": {
-      "__id__": 29
+      "__id__": 38
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -646,6 +649,136 @@
     "nestedPrefabInstanceRoots": null
   },
   {
+    "__type__": "cc.Node",
+    "_objFlags": 0,
+    "_parent": {
+      "__id__": 2
+    },
+    "_prefab": {
+      "__id__": 30
+    },
+    "__editorExtras__": {}
+  },
+  {
+    "__type__": "cc.PrefabInfo",
+    "root": {
+      "__id__": 29
+    },
+    "asset": {
+      "__uuid__": "fbf4dac1-cc19-4d0d-9edd-75683f9ab290@b4b6a",
+      "__expectedType__": "cc.Prefab"
+    },
+    "fileId": "a7cwMJG8xXip3MZ0a29TYp",
+    "instance": {
+      "__id__": 31
+    },
+    "targetOverrides": null
+  },
+  {
+    "__type__": "cc.PrefabInstance",
+    "fileId": "8dHWz2TGdPO7BMoOm5Mk//",
+    "prefabRootNode": {
+      "__id__": 1
+    },
+    "mountedChildren": [],
+    "mountedComponents": [],
+    "propertyOverrides": [
+      {
+        "__id__": 32
+      },
+      {
+        "__id__": 34
+      },
+      {
+        "__id__": 35
+      },
+      {
+        "__id__": 36
+      },
+      {
+        "__id__": 37
+      }
+    ],
+    "removedComponents": []
+  },
+  {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 33
+    },
+    "propertyPath": [
+      "_name"
+    ],
+    "value": "Backpack"
+  },
+  {
+    "__type__": "cc.TargetInfo",
+    "localID": [
+      "a7cwMJG8xXip3MZ0a29TYp"
+    ]
+  },
+  {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 33
+    },
+    "propertyPath": [
+      "_lpos"
+    ],
+    "value": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": -0.352
+    }
+  },
+  {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 33
+    },
+    "propertyPath": [
+      "_lrot"
+    ],
+    "value": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 1,
+      "z": 0,
+      "w": 6.123233995736766e-17
+    }
+  },
+  {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 33
+    },
+    "propertyPath": [
+      "_euler"
+    ],
+    "value": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 180,
+      "z": 0
+    }
+  },
+  {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 33
+    },
+    "propertyPath": [
+      "_lscale"
+    ],
+    "value": {
+      "__type__": "cc.Vec3",
+      "x": 0.75,
+      "y": 0.75,
+      "z": 0.75
+    }
+  },
+  {
     "__type__": "cc.PrefabInfo",
     "root": {
       "__id__": 1
@@ -668,7 +801,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 31
+      "__id__": 40
     },
     "joystick": null,
     "movementRoot": {
@@ -678,11 +811,11 @@
       "__id__": 2
     },
     "animationController": {
-      "__id__": 32
+      "__id__": 41
     },
     "vacuumSystem": null,
     "movementCollider": {
-      "__id__": 34
+      "__id__": 43
     },
     "moveSpeed": 4.5,
     "minJoystickAcceleration": 0.35,
@@ -708,7 +841,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 33
+      "__id__": 42
     },
     "animation": null,
     "idleClipName": "?",
@@ -731,7 +864,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 35
+      "__id__": 44
     },
     "_material": null,
     "_isTrigger": false,
@@ -760,7 +893,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 37
+      "__id__": 46
     },
     "goldOreStack": {
       "__id__": 17
@@ -784,7 +917,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 39
+      "__id__": 48
     },
     "_group": 1,
     "_type": 4,
@@ -823,10 +956,13 @@
     "instance": null,
     "targetOverrides": [
       {
-        "__id__": 41
+        "__id__": 50
       }
     ],
     "nestedPrefabInstanceRoots": [
+      {
+        "__id__": 29
+      },
       {
         "__id__": 3
       }
@@ -835,7 +971,7 @@
   {
     "__type__": "cc.TargetOverrideInfo",
     "source": {
-      "__id__": 32
+      "__id__": 41
     },
     "sourceInfo": null,
     "propertyPath": [
@@ -845,7 +981,7 @@
       "__id__": 3
     },
     "targetInfo": {
-      "__id__": 42
+      "__id__": 51
     }
   },
   {
