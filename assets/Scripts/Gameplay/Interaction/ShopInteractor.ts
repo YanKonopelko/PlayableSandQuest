@@ -1,7 +1,7 @@
-import { _decorator, CCInteger, Component, Enum, Node, tween, Vec3 } from 'cc';
+import { _decorator, CCInteger, Enum, Label, Node, Sprite, tween, Vec3 } from 'cc';
 import { CustomActionWithParam } from '../../Utills/CustomActions';
+import { RequiredReference } from '../Core/RequiredReference';
 import { EItemType } from '../Items/ItemType';
-import { ItemStackView } from '../Items/ItemStackView';
 import { PlayerInventory } from '../Player/PlayerInventory';
 import { Interactor } from './Interactor';
 
@@ -15,14 +15,14 @@ export class ShopInteractor extends Interactor {
     @property({ type: CCInteger })
     public price: number = 4;
 
-    @property(ItemStackView)
-    public progressStack: ItemStackView | null = null;
+    @property(Label)
+    public countRemain: Label | null = null;
+
+    @property(Sprite)
+    public fill: Sprite | null = null;
 
     @property(Node)
     public receivePivot: Node | null = null;
-
-    @property(Node)
-    public progressRoot: Node | null = null;
 
     public readonly onPurchased: CustomActionWithParam<ShopInteractor> = new CustomActionWithParam<ShopInteractor>();
     public readonly onProgressChanged: CustomActionWithParam<number> = new CustomActionWithParam<number>();
@@ -38,17 +38,42 @@ export class ShopInteractor extends Interactor {
         return this.purchased;
     }
 
+    public get Remaining(): number {
+        return Math.max(0, this.price - this.paid);
+    }
+
+    protected onLoad(): void {
+        super.onLoad();
+        RequiredReference.Check(this, this.countRemain, 'countRemain');
+        RequiredReference.Check(this, this.fill, 'fill');
+        RequiredReference.CheckNode(this, this.receivePivot, 'receivePivot');
+    }
+
+    protected start(): void {
+        this.RefreshProgress(false);
+    }
+
     public CanInteract(inventory: PlayerInventory | null): boolean {
-        return !this.purchased && !!inventory && inventory.Has(this.priceItem, 1);
+        return !this.purchased && this.Remaining > 0 && !!inventory && inventory.Has(this.priceItem, 1);
     }
 
     public TryPayFrom(inventory: PlayerInventory, amount: number = 1): boolean {
-        if (this.purchased || !inventory.TryRemove(this.priceItem, amount)) {
+        const acceptedAmount = Math.min(this.Remaining, Math.max(0, amount));
+        if (acceptedAmount <= 0 || !inventory.TryRemove(this.priceItem, acceptedAmount)) {
             return false;
         }
 
-        this.paid = Math.min(this.price, this.paid + amount);
-        this.RefreshProgress();
+        return this.ReceivePayment(acceptedAmount);
+    }
+
+    public ReceivePayment(amount: number = 1): boolean {
+        const acceptedAmount = Math.min(this.Remaining, Math.max(0, amount));
+        if (this.purchased || acceptedAmount <= 0) {
+            return false;
+        }
+
+        this.paid += acceptedAmount;
+        this.RefreshProgress(true);
 
         if (this.paid >= this.price) {
             this.CompletePurchase();
@@ -63,14 +88,19 @@ export class ShopInteractor extends Interactor {
         this.RefreshProgress();
     }
 
-    private RefreshProgress(): void {
-        this.progressStack?.SetCount(this.paid);
+    private RefreshProgress(animate: boolean = true): void {
+        if (this.countRemain) {
+            this.countRemain.string = this.Remaining.toString();
+        }
+
+        if (this.fill) {
+            this.fill.fillRange = this.price <= 0 ? 1 : Math.min(1, Math.max(0, this.paid / this.price));
+        }
+
         this.onProgressChanged.Invoke(this.paid);
 
-        if (this.progressRoot) {
-            const progress = this.price <= 0 ? 1 : this.paid / this.price;
-            this.progressRoot.setScale(Math.max(0.001, progress), 1, 1);
-            tween(this.node)
+        if (animate && this.fill) {
+            tween(this.fill.node)
                 .to(0.08, { scale: new Vec3(1.08, 1.08, 1.08) })
                 .to(0.12, { scale: Vec3.ONE })
                 .start();

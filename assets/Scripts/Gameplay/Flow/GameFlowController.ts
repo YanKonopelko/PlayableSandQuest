@@ -1,4 +1,4 @@
-import { _decorator, CCInteger, Component, Enum, EventTouch, input, Input, Node, Prefab, Vec3 } from 'cc';
+import { _decorator, CCFloat, CCInteger, Component, Enum, EventTouch, input, Input, Node, Prefab, Vec3 } from 'cc';
 import { CartQueueController } from '../CartQueue/CartQueueController';
 import { CartUnit } from '../CartQueue/CartUnit';
 import { HintController } from '../Hints/HintController';
@@ -114,6 +114,9 @@ export class GameFlowController extends Component {
     @property({ type: CCInteger })
     public vacuumUpgradePurchasesBeforeConveyor: number = 2;
 
+    @property({ type: CCFloat, min: 0 })
+    public shopItemTransferDelay: number = 0.12;
+
     @property({ type: Enum(EGameFlowState) })
     public debugState: EGameFlowState = EGameFlowState.GoToSand;
 
@@ -121,6 +124,7 @@ export class GameFlowController extends Component {
     private state: EGameFlowState = EGameFlowState.GoToSand;
     private finalTapArmed: boolean = false;
     private exchangeInProgress: boolean = false;
+    private shopItemInFlight: boolean = false;
 
     protected start(): void {
         this.BindEvents();
@@ -141,6 +145,7 @@ export class GameFlowController extends Component {
         this.cartQueue?.onActiveCartReady.Subscribe(this.OnActiveCartReady, this);
         this.moneyStorage?.onPlayerEnter.Subscribe(this.OnStorageEnter, this);
         this.upgradeShop?.onPlayerEnter.Subscribe(this.OnUpgradeShopEnter, this);
+        this.upgradeShop?.onPlayerExit.Subscribe(this.OnUpgradeShopExit, this);
         this.upgradeShop?.onPurchased.Subscribe(this.OnUpgradePurchased, this);
     }
 
@@ -339,12 +344,57 @@ export class GameFlowController extends Component {
             return;
         }
 
-        while (!this.upgradeShop.IsPurchased && this.upgradeShop.CanInteract(this.inventory)) {
-            this.upgradeShop.TryPayFrom(this.inventory, 1);
+        this.TryTransferNextShopItem();
+    }
+
+    private OnUpgradeShopExit(): void {
+        this.StopShopTransfer();
+    }
+
+    private TryTransferNextShopItem(): void {
+        const shop = this.upgradeShop;
+        const inventory = this.inventory;
+        if (
+            this.shopItemInFlight ||
+            !shop?.IsPlayerInside ||
+            !inventory ||
+            !shop.CanInteract(inventory) ||
+            !inventory.TryRemove(shop.priceItem, 1)
+        ) {
+            return;
+        }
+
+        this.shopItemInFlight = true;
+        const target = shop.receivePivot ?? shop.node;
+        const start = this.playerItemFlyStart?.worldPosition ?? this.player?.node.worldPosition ?? new Vec3();
+
+        const onItemArrived = () => {
+            const completesPurchase = shop.Remaining <= 1;
+            const paymentAccepted = shop.ReceivePayment(1);
+            this.shopItemInFlight = false;
+
+            if (!paymentAccepted || completesPurchase || shop.IsPurchased || !shop.IsPlayerInside) {
+                return;
+            }
+
+            this.scheduleOnce(this.TryTransferNextShopItem, Math.max(0, this.shopItemTransferDelay));
+        };
+
+        const flyingItem = this.flyService && this.moneyFlyPrefab
+            ? this.flyService.FlyPrefabToNode(this.moneyFlyPrefab, start.clone(), target, onItemArrived)
+            : null;
+
+        if (!flyingItem) {
+            this.scheduleOnce(onItemArrived, Math.max(0, this.shopItemTransferDelay));
         }
     }
 
+    private StopShopTransfer(): void {
+        this.unschedule(this.TryTransferNextShopItem);
+    }
+
     private OnUpgradePurchased(): void {
+        this.StopShopTransfer();
         this.upgradePurchases++;
 
         if (this.upgradePurchases <= this.vacuumUpgradePurchasesBeforeConveyor) {
