@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, CCInteger, Component, Enum, EventTouch, input, Input, Node, Prefab, Vec3 } from 'cc';
+import { _decorator, CCFloat, CCInteger, Component, Enum, EventTouch, input, Input, instantiate, Material, MeshRenderer, Node, Prefab, Vec3, Vec4 } from 'cc';
 import { CartQueueController } from '../CartQueue/CartQueueController';
 import { CartUnit } from '../CartQueue/CartUnit';
 import { HintController } from '../Hints/HintController';
@@ -117,6 +117,21 @@ export class GameFlowController extends Component {
     @property({ type: CCFloat, min: 0 })
     public shopItemTransferDelay: number = 0.12;
 
+    @property({ type: CCFloat, min: 0.1, tooltip: 'Seconds between automatic gold bars on the unlocked conveyor.' })
+    public conveyorSpawnInterval: number = 1.25;
+
+    @property({ type: CCFloat, min: 0.1, tooltip: 'World-space movement speed of gold bars on the conveyor.' })
+    public conveyorItemSpeed: number = 4;
+
+    @property({ type: CCFloat, tooltip: 'Vertical offset from ConveyorRoot/Start to the top of the belt.' })
+    public conveyorItemHeight: number = 1.25;
+
+    @property({ type: CCInteger, min: 1, tooltip: 'Safety limit for simultaneous gold bars on the conveyor.' })
+    public conveyorMaxItems: number = 8;
+
+    @property({ type: CCFloat, min: 0, tooltip: 'Negative horizontal UV offset speed for the LentaAnim material.' })
+    public conveyorBeltScrollSpeed: number = 0.25;
+
     @property({ type: Enum(EGameFlowState) })
     public debugState: EGameFlowState = EGameFlowState.GoToSand;
 
@@ -125,6 +140,14 @@ export class GameFlowController extends Component {
     private finalTapArmed: boolean = false;
     private exchangeInProgress: boolean = false;
     private shopItemInFlight: boolean = false;
+    private conveyorRunning: boolean = false;
+    private conveyorSpawnTimer: number = 0;
+    private conveyorSpawnPoint: Node | null = null;
+    private readonly conveyorItems: Node[] = [];
+    private readonly conveyorDeliveryPosition: Vec3 = new Vec3();
+    private readonly conveyorMoveDelta: Vec3 = new Vec3();
+    private conveyorBeltMaterial: Material | null = null;
+    private readonly conveyorBeltTilingOffset: Vec4 = new Vec4();
 
     protected start(): void {
         this.BindEvents();
@@ -135,6 +158,60 @@ export class GameFlowController extends Component {
 
     protected onDestroy(): void {
         input.off(Input.EventType.TOUCH_START, this.OnAnyFinalTap, this);
+        this.StopAutoConveyor();
+    }
+
+    protected update(dt: number): void {
+        this.UpdateConveyorBeltMaterial(dt);
+
+        if (!this.conveyorRunning) {
+            return;
+        }
+
+        const safeDt = Math.max(0, dt);
+        const spawnInterval = Number.isFinite(this.conveyorSpawnInterval) && this.conveyorSpawnInterval > 0
+            ? this.conveyorSpawnInterval
+            : 1.25;
+        this.conveyorSpawnTimer += safeDt;
+        if (this.conveyorSpawnTimer >= spawnInterval) {
+            this.conveyorSpawnTimer -= spawnInterval;
+            this.SpawnConveyorGold();
+        }
+
+        if (this.conveyorItems.length === 0) {
+            return;
+        }
+
+        this.UpdateConveyorDeliveryPosition();
+        const itemSpeed = Number.isFinite(this.conveyorItemSpeed) && this.conveyorItemSpeed > 0
+            ? this.conveyorItemSpeed
+            : 4;
+        const step = itemSpeed * safeDt;
+
+        for (let i = this.conveyorItems.length - 1; i >= 0; i--) {
+            const item = this.conveyorItems[i];
+            if (!item?.isValid) {
+                this.conveyorItems.splice(i, 1);
+                continue;
+            }
+
+            const currentPosition = item.worldPosition.clone();
+            Vec3.subtract(this.conveyorMoveDelta, this.conveyorDeliveryPosition, currentPosition);
+            const distance = this.conveyorMoveDelta.length();
+
+            if (distance <= step || distance <= 0.05) {
+                item.setWorldPosition(this.conveyorDeliveryPosition);
+                if (this.cartQueue?.TryGiveGold(1)) {
+                    this.conveyorItems.splice(i, 1);
+                    item.destroy();
+                }
+                continue;
+            }
+
+            this.conveyorMoveDelta.multiplyScalar(step / distance);
+            currentPosition.add(this.conveyorMoveDelta);
+            item.setWorldPosition(currentPosition);
+        }
     }
 
     private BindEvents(): void {
@@ -181,6 +258,7 @@ export class GameFlowController extends Component {
                 break;
             case EGameFlowState.Packshot:
                 this.hints?.Hide();
+                this.StopAutoConveyor();
                 this.packshot?.Show();
                 break;
         }
@@ -410,8 +488,133 @@ export class GameFlowController extends Component {
 
     private UnlockConveyorAndFinalShops(): void {
         this.SetConveyorVisible(true);
+        this.StartConveyorBeltAnimation();
+        this.StartAutoConveyor();
         this.SetFinalVisualShopsVisible(true);
         this.SetState(EGameFlowState.AwaitFinalTap);
+    }
+
+    private StartConveyorBeltAnimation(): void {
+        if (this.conveyorBeltMaterial || !this.conveyorRoot) {
+            return;
+        }
+
+        const renderers = this.conveyorRoot.getComponentsInChildren(MeshRenderer);
+        let slotFallback: Material | null = null;
+
+        for (const renderer of renderers) {
+            for (let i = 0; i < renderer.sharedMaterials.length; i++) {
+                const material = renderer.getSharedMaterial(i);
+                if (!material) {
+                    continue;
+                }
+
+                if (!slotFallback && i === 1 && material.getProperty('tilingOffset') instanceof Vec4) {
+                    slotFallback = material;
+                }
+
+                if (material.name.toLowerCase() === 'lentaanim') {
+                    this.conveyorBeltMaterial = material;
+                    break;
+                }
+            }
+
+            if (this.conveyorBeltMaterial) {
+                break;
+            }
+        }
+
+        this.conveyorBeltMaterial ??= slotFallback;
+        const tilingOffset = this.conveyorBeltMaterial?.getProperty('tilingOffset');
+        if (!(tilingOffset instanceof Vec4)) {
+            this.conveyorBeltMaterial = null;
+            console.error('[GameFlowController] LentaAnim material with tilingOffset was not found under ConveyorRoot.');
+            return;
+        }
+
+        Vec4.copy(this.conveyorBeltTilingOffset, tilingOffset);
+    }
+
+    private UpdateConveyorBeltMaterial(dt: number): void {
+        if (!this.conveyorBeltMaterial || this.conveyorBeltScrollSpeed <= 0) {
+            return;
+        }
+
+        this.conveyorBeltTilingOffset.z -= this.conveyorBeltScrollSpeed * Math.max(0, dt);
+        this.conveyorBeltTilingOffset.z %= 1;
+        this.conveyorBeltMaterial.setProperty('tilingOffset', this.conveyorBeltTilingOffset);
+    }
+
+    private StartAutoConveyor(): void {
+        if (this.conveyorRunning || !this.conveyorRoot || !this.goldFlyPrefab || !this.cartQueue) {
+            return;
+        }
+
+        this.conveyorSpawnPoint = this.conveyorRoot.getChildByName('Start');
+        if (!this.conveyorSpawnPoint) {
+            console.error('[GameFlowController] ConveyorRoot/Start is missing; automatic gold delivery is disabled.');
+            return;
+        }
+
+        const target = this.cartQueue.ActiveCart?.receivePivot ?? this.cartQueue.ActiveCart?.node;
+        if (!target) {
+            console.error('[GameFlowController] Active cart receive target is missing; automatic gold delivery is disabled.');
+            return;
+        }
+
+        target.getWorldPosition(this.conveyorDeliveryPosition);
+        this.conveyorRunning = true;
+        this.conveyorSpawnTimer = 0;
+        this.SpawnConveyorGold();
+    }
+
+    private StopAutoConveyor(): void {
+        this.conveyorRunning = false;
+        this.conveyorSpawnTimer = 0;
+
+        for (const item of this.conveyorItems) {
+            if (item?.isValid) {
+                item.destroy();
+            }
+        }
+        this.conveyorItems.length = 0;
+    }
+
+    private SpawnConveyorGold(): void {
+        if (
+            !this.conveyorRunning ||
+            !this.conveyorSpawnPoint?.isValid ||
+            !this.goldFlyPrefab ||
+            this.conveyorItems.length >= (
+                Number.isFinite(this.conveyorMaxItems) && this.conveyorMaxItems > 0
+                    ? Math.floor(this.conveyorMaxItems)
+                    : 8
+            )
+        ) {
+            return;
+        }
+
+        const root = this.flyService?.flyRoot ?? this.conveyorRoot;
+        if (!root) {
+            return;
+        }
+
+        const item = instantiate(this.goldFlyPrefab);
+        root.addChild(item);
+
+        const startPosition = this.conveyorSpawnPoint.worldPosition.clone();
+        startPosition.y += Number.isFinite(this.conveyorItemHeight) ? this.conveyorItemHeight : 1.25;
+        item.setWorldPosition(startPosition);
+        this.conveyorItems.push(item);
+    }
+
+    private UpdateConveyorDeliveryPosition(): void {
+        if (!this.cartQueue?.IsActiveCartReady) {
+            return;
+        }
+
+        const target = this.cartQueue.ActiveCart?.receivePivot ?? this.cartQueue.ActiveCart?.node;
+        target?.getWorldPosition(this.conveyorDeliveryPosition);
     }
 
     private SetConveyorVisible(value: boolean): void {
