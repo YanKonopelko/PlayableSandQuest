@@ -69,6 +69,7 @@ export class VacuumSystem extends Component {
     private warningTimer: number = 0;
     private warningBlinkState: boolean = false;
     private tubeParts: Node[] = [];
+    private activeTubePartCount: number = 0;
     private headAttached: boolean = false;
     private returningHome: boolean = false;
     private headTransitionVersion: number = 0;
@@ -249,20 +250,22 @@ export class VacuumSystem extends Component {
         const distance = Vec3.distance(start, end);
         const count = Math.max(1, Math.ceil(distance / Math.max(0.1, this.segmentLength)));
         this.EnsureSegmentCount(count);
+        const directionX = end.x - start.x;
+        const directionZ = end.z - start.z;
+        const hasDirection = directionX * directionX + directionZ * directionZ > 0.001;
+        const yaw = hasDirection
+            ? Math.atan2(directionX, directionZ) * 180 / Math.PI
+            : 0;
 
-        for (let i = 0; i < this.tubeParts.length; i++) {
+        for (let i = 0; i < this.activeTubePartCount; i++) {
             const t = (i + 0.5) / count;
-            const pos = new Vec3();
-            Vec3.lerp(pos, start, end, t);
-            pos.y += Math.sin(t * Math.PI) * this.bendAmplitude;
-
             const part = this.tubeParts[i];
-            part.setWorldPosition(pos);
-
-            const dir = new Vec3(end.x - start.x, 0, end.z - start.z);
-            if (dir.lengthSqr() > 0.001) {
-                dir.normalize();
-                const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
+            part.setWorldPosition(
+                start.x + directionX * t,
+                start.y + (end.y - start.y) * t + Math.sin(t * Math.PI) * this.bendAmplitude,
+                start.z + directionZ * t,
+            );
+            if (hasDirection) {
                 part.setRotationFromEuler(0, yaw, 0);
             }
         }
@@ -280,10 +283,10 @@ export class VacuumSystem extends Component {
             this.ApplyMaterial(part, this.warning && this.warningBlinkState ? this.warningTubeMaterial : this.normalTubeMaterial);
         }
 
-        while (this.tubeParts.length > count) {
-            const part = this.tubeParts.pop();
-            part?.destroy();
+        for (let i = 0; i < this.tubeParts.length; i++) {
+            this.tubeParts[i].active = i < count;
         }
+        this.activeTubePartCount = count;
     }
 
     private SetWarning(value: boolean): void {

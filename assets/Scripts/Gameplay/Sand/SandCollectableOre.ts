@@ -38,12 +38,23 @@ export class SandCollectableOre extends Component {
     }
 
     public TryCollectFrom(probe: Node): boolean {
-        if (this.collected || !probe) {
+        if (!probe) {
             return false;
         }
 
-        const distance = Vec3.distance(this.node.worldPosition, probe.worldPosition);
-        if (distance > this.collectRadius) {
+        return this.TryCollectAt(probe.worldPosition);
+    }
+
+    public TryCollectAt(worldPosition: Vec3): boolean {
+        if (this.collected) {
+            return false;
+        }
+
+        const orePosition = this.node.worldPosition;
+        const dx = orePosition.x - worldPosition.x;
+        const dy = orePosition.y - worldPosition.y;
+        const dz = orePosition.z - worldPosition.z;
+        if (dx * dx + dy * dy + dz * dz > this.collectRadius * this.collectRadius) {
             return false;
         }
 

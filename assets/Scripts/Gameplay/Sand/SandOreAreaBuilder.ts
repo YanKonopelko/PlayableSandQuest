@@ -65,8 +65,8 @@ export class SandOreAreaBuilder extends Component {
     private generatedOres: SandCollectableOre[] = [];
     private lastSignature: string = '';
 
-    public GetOres(): SandCollectableOre[] {
-        return this.generatedOres.filter(ore => ore?.isValid);
+    public GetOres(): readonly SandCollectableOre[] {
+        return this.generatedOres;
     }
 
     public RebuildNow(): void {

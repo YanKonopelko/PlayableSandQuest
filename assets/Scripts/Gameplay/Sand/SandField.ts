@@ -90,8 +90,8 @@ export class SandField extends Component {
         this.surface?.Erase(worldPosition, this.collectRadius);
 
         for (const ore of this.GetOres()) {
-            if (this.vacuumProbe) {
-                ore?.TryCollectFrom(this.vacuumProbe);
+            if (ore?.isValid) {
+                ore.TryCollectAt(worldPosition);
             }
         }
     }
@@ -100,7 +100,9 @@ export class SandField extends Component {
         this.tickTimer = 0;
         this.surface?.ResetSurface();
         for (const ore of this.GetOres()) {
-            ore?.ResetOre();
+            if (ore?.isValid) {
+                ore.ResetOre();
+            }
         }
     }
 
@@ -142,7 +144,7 @@ export class SandField extends Component {
         return false;
     }
 
-    private GetOres(): SandCollectableOre[] {
+    private GetOres(): readonly SandCollectableOre[] {
         return this.oreBuilder?.GetOres() ?? [];
     }
 }

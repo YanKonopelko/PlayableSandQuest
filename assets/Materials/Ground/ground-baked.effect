@@ -18,7 +18,11 @@ CCEffect %{
 }%
 
 CCProgram ground-baked-fs %{
-  precision mediump float;
+  // The procedural hash is evaluated from world-space coordinates. Real
+  // mediump fragment precision on mobile GPUs quantizes those coordinates and
+  // turns the noise into large straight bands, while desktop drivers commonly
+  // hide the issue by using high precision internally.
+  precision highp float;
   #include <legacy/output>
   #include <legacy/fog-fs>
 
