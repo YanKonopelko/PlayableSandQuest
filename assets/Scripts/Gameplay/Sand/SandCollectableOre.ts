@@ -58,23 +58,23 @@ export class SandCollectableOre extends Component {
             return false;
         }
 
-        this.Collect();
-        return true;
+        return this.Collect();
     }
 
-    public Collect(): void {
-        if (this.collected) {
-            return;
+    public Collect(): boolean {
+        const inventory = this.playerInventory;
+        if (this.collected || !inventory?.TryReserve(this.resultItem, 1)) {
+            return false;
         }
 
         this.collected = true;
         const start = this.node.worldPosition.clone();
         this.node.active = false;
 
-        const complete = () => this.playerInventory?.Add(this.resultItem, 1);
+        const complete = () => inventory.CommitReserved(this.resultItem, 1);
 
         if (this.flyService && this.flyVisualPrefab && this.flyTarget) {
-            this.flyService.FlyPrefabToNode(
+            const flyingItem = this.flyService.FlyPrefabToNode(
                 this.flyVisualPrefab,
                 start,
                 this.flyTarget,
@@ -82,9 +82,14 @@ export class SandCollectableOre extends Component {
                 this.collectFlyDuration,
                 this.collectFlyArcHeight,
             );
+            if (!flyingItem) {
+                complete();
+            }
         } else {
             complete();
         }
+
+        return true;
     }
 
     public ResetOre(): void {

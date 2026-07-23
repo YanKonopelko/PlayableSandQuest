@@ -99,11 +99,7 @@ export class SandField extends Component {
     public ResetField(): void {
         this.tickTimer = 0;
         this.surface?.ResetSurface();
-        for (const ore of this.GetOres()) {
-            if (ore?.isValid) {
-                ore.ResetOre();
-            }
-        }
+        this.oreBuilder?.RebuildWithNextSeed();
     }
 
     private OnTriggerEnter(event: ITriggerEvent): void {

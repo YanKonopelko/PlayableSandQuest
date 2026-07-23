@@ -151,6 +151,7 @@ export class GameFlowController extends Component {
 
     protected start(): void {
         this.BindEvents();
+        this.SyncGoldOreCapacity();
         this.SetConveyorVisible(false);
         this.SetFinalVisualShopsVisible(false);
         this.SetState(EGameFlowState.GoToSand);
@@ -477,6 +478,7 @@ export class GameFlowController extends Component {
 
         if (this.upgradePurchases <= this.vacuumUpgradePurchasesBeforeConveyor) {
             this.vacuum?.UpgradeLength();
+            this.SyncGoldOreCapacity();
             this.upgradeShop?.ResetShop();
             this.SetState(EGameFlowState.GoToSand);
             return;
@@ -484,6 +486,10 @@ export class GameFlowController extends Component {
 
         this.SetState(EGameFlowState.ConveyorUnlocked);
         this.UnlockConveyorAndFinalShops();
+    }
+
+    private SyncGoldOreCapacity(): void {
+        this.inventory?.SetGoldOreCapacityForUpgradeLevel(this.vacuum?.UpgradeLevel ?? 0);
     }
 
     private UnlockConveyorAndFinalShops(): void {

@@ -6,6 +6,8 @@ const { ccclass, property } = _decorator;
 
 @ccclass('PlayerInventory')
 export class PlayerInventory extends Component {
+    private static readonly GOLD_ORE_CAPACITIES: readonly number[] = [12, 16, 20];
+
     @property(ItemStackView)
     public goldOreStack: ItemStackView | null = null;
 
@@ -16,6 +18,8 @@ export class PlayerInventory extends Component {
     public itemStacks: ItemStackView[] = [];
 
     private readonly counts: number[] = [0, 0, 0];
+    private readonly reservedCounts: number[] = [0, 0, 0];
+    private goldOreCapacity: number = PlayerInventory.GOLD_ORE_CAPACITIES[0];
 
     public GetCount(itemType: EItemType): number {
         return this.counts[itemType] ?? 0;
@@ -25,9 +29,42 @@ export class PlayerInventory extends Component {
         return this.GetCount(itemType) >= amount;
     }
 
-    public Add(itemType: EItemType, amount: number = 1): void {
-        this.counts[itemType] = this.GetCount(itemType) + Math.max(0, amount);
+    public Add(itemType: EItemType, amount: number = 1): number {
+        const requestedAmount = this.NormalizeAmount(amount);
+        const acceptedAmount = Math.min(requestedAmount, this.GetAvailableCapacity(itemType));
+        if (acceptedAmount <= 0) {
+            return 0;
+        }
+
+        this.counts[itemType] = this.GetCount(itemType) + acceptedAmount;
         this.RefreshStackViews(itemType);
+        return acceptedAmount;
+    }
+
+    public SetGoldOreCapacityForUpgradeLevel(upgradeLevel: number): void {
+        const safeLevel = Number.isFinite(upgradeLevel) ? Math.floor(upgradeLevel) : 0;
+        const capacityIndex = Math.max(0, Math.min(PlayerInventory.GOLD_ORE_CAPACITIES.length - 1, safeLevel));
+        this.goldOreCapacity = PlayerInventory.GOLD_ORE_CAPACITIES[capacityIndex];
+    }
+
+    public TryReserve(itemType: EItemType, amount: number = 1): boolean {
+        const requestedAmount = this.NormalizeAmount(amount);
+        if (requestedAmount <= 0 || this.GetAvailableCapacity(itemType) < requestedAmount) {
+            return false;
+        }
+
+        this.reservedCounts[itemType] = this.GetReservedCount(itemType) + requestedAmount;
+        return true;
+    }
+
+    public CommitReserved(itemType: EItemType, amount: number = 1): number {
+        const committedAmount = Math.min(this.NormalizeAmount(amount), this.GetReservedCount(itemType));
+        if (committedAmount <= 0) {
+            return 0;
+        }
+
+        this.reservedCounts[itemType] = this.GetReservedCount(itemType) - committedAmount;
+        return this.Add(itemType, committedAmount);
     }
 
     public TryRemove(itemType: EItemType, amount: number = 1): boolean {
@@ -42,6 +79,7 @@ export class PlayerInventory extends Component {
 
     public Clear(itemType: EItemType): void {
         this.counts[itemType] = 0;
+        this.reservedCounts[itemType] = 0;
         this.RefreshStackViews(itemType);
     }
 
@@ -63,6 +101,22 @@ export class PlayerInventory extends Component {
             default:
                 return null;
         }
+    }
+
+    private GetReservedCount(itemType: EItemType): number {
+        return this.reservedCounts[itemType] ?? 0;
+    }
+
+    private GetAvailableCapacity(itemType: EItemType): number {
+        if (itemType !== EItemType.GoldOre) {
+            return Number.MAX_SAFE_INTEGER;
+        }
+
+        return Math.max(0, this.goldOreCapacity - this.GetCount(itemType) - this.GetReservedCount(itemType));
+    }
+
+    private NormalizeAmount(amount: number): number {
+        return Number.isFinite(amount) ? Math.max(0, Math.floor(amount)) : 0;
     }
 
     private RefreshStackViews(animatedItemType: EItemType | null, animate: boolean = true): void {

@@ -75,6 +75,12 @@ export class SandOreAreaBuilder extends Component {
         this.BuildOre();
     }
 
+    public RebuildWithNextSeed(): void {
+        const currentSeed = Number.isFinite(this.seed) ? Math.floor(this.seed) : 0;
+        this.seed = currentSeed + 1;
+        this.RebuildNow();
+    }
+
     protected onEnable(): void {
         this.TryRebuild();
     }
