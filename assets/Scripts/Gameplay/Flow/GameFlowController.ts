@@ -54,6 +54,9 @@ export class GameFlowController extends Component {
     @property(Node)
     public sandRunTarget: Node | null = null;
 
+    @property(Node)
+    public sandExitTarget: Node | null = null;
+
     @property(Interactor)
     public exchangeInteractor: Interactor | null = null;
 
@@ -140,6 +143,7 @@ export class GameFlowController extends Component {
     private finalTapArmed: boolean = false;
     private exchangeInProgress: boolean = false;
     private shopItemInFlight: boolean = false;
+    private exitingSandAutomatically: boolean = false;
     private conveyorRunning: boolean = false;
     private conveyorSpawnTimer: number = 0;
     private conveyorSpawnPoint: Node | null = null;
@@ -266,6 +270,10 @@ export class GameFlowController extends Component {
     }
 
     private OnSandEnter(): void {
+        if (this.exitingSandAutomatically) {
+            return;
+        }
+
         this.vacuum?.Activate();
         this.player?.SetVacuumVisualEnabled(true);
 
@@ -278,6 +286,14 @@ export class GameFlowController extends Component {
     }
 
     private OnSandExit(): void {
+        if (this.player && this.sandExitTarget) {
+            this.exitingSandAutomatically = true;
+            this.player.RunAutomaticallyTo(
+                this.sandExitTarget,
+                () => this.exitingSandAutomatically = false,
+            );
+        }
+
         if (this.state === EGameFlowState.CollectGold) {
             if ((this.inventory?.GetCount(EItemType.GoldOre) ?? 0) > 0) {
                 this.SetState(EGameFlowState.GoToExchange);
