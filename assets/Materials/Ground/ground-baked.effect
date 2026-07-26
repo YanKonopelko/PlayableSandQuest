@@ -7,14 +7,14 @@ CCEffect %{
       properties:
         mainTexture: { value: white }
         mainColor:   { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
-        darkColor:   { value: [0.48, 0.23, 0.12, 1.0], editor: { type: color } }
-        lightColor:  { value: [0.86, 0.53, 0.30, 1.0], editor: { type: color } }
+        darkColor:   { value: [0.32, 0.60, 0.25, 1.0], editor: { type: color } }
+        lightColor:  { value: [0.66, 0.85, 0.36, 1.0], editor: { type: color } }
         bakeUvTransform: { value: [1.0, 1.0, 0.0, 0.0] }
         brightness:  { value: 1.0, editor: { range: [0.5, 1.5, 0.01], slide: true } }
-        macroScale:  { value: 0.16, editor: { range: [0.03, 0.5, 0.01], slide: true } }
-        detailScale: { value: 1.35, editor: { range: [0.3, 4.0, 0.05], slide: true } }
-        grainScale:  { value: 7.0, editor: { range: [2.0, 20.0, 0.25], slide: true } }
-        grainStrength: { value: 0.12, editor: { range: [0.0, 0.3, 0.01], slide: true } }
+        macroScale:  { value: 0.12, editor: { range: [0.03, 0.5, 0.01], slide: true } }
+        detailScale: { value: 0.9, editor: { range: [0.3, 4.0, 0.05], slide: true } }
+        grainScale:  { value: 4.8, editor: { range: [2.0, 20.0, 0.25], slide: true } }
+        grainStrength: { value: 0.1, editor: { range: [0.0, 0.3, 0.01], slide: true } }
 }%
 
 CCProgram ground-baked-fs %{
@@ -43,62 +43,66 @@ CCProgram ground-baked-fs %{
     float grainStrength;
   };
 
-  float clayHash (vec2 p) {
+  float grassHash (vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
     p += dot(p, p + 45.32);
     return fract(p.x * p.y);
   }
 
-  float clayNoise (vec2 p) {
+  float grassNoise (vec2 p) {
     vec2 cell = floor(p);
     vec2 local = fract(p);
     vec2 blend = local * local * (3.0 - 2.0 * local);
 
-    float a = clayHash(cell);
-    float b = clayHash(cell + vec2(1.0, 0.0));
-    float c = clayHash(cell + vec2(0.0, 1.0));
-    float d = clayHash(cell + vec2(1.0, 1.0));
+    float a = grassHash(cell);
+    float b = grassHash(cell + vec2(1.0, 0.0));
+    float c = grassHash(cell + vec2(0.0, 1.0));
+    float d = grassHash(cell + vec2(1.0, 1.0));
     return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
   }
 
-  float clayFbm (vec2 p) {
+  float grassFbm (vec2 p) {
     float value = 0.0;
     float weight = 0.5;
     for (int octave = 0; octave < 3; octave++) {
-      value += clayNoise(p) * weight;
+      value += grassNoise(p) * weight;
       p = p * 2.03 + vec2(17.17, -9.41);
       weight *= 0.5;
     }
     return value / 0.875;
   }
 
-  float clayPore (vec2 p) {
+  float grassTufts (vec2 p) {
     vec2 cell = floor(p);
-    vec2 local = fract(p);
-    float seed = clayHash(cell + vec2(31.7, 11.3));
-    vec2 centre = vec2(
-      0.25 + clayHash(cell + vec2(4.1, 19.7)) * 0.5,
-      0.25 + clayHash(cell + vec2(8.3, 27.9)) * 0.5
-    );
-    float dotShape = 1.0 - smoothstep(0.035, 0.13, length(local - centre));
-    return dotShape * smoothstep(0.88, 0.98, seed);
+    vec2 local = fract(p) - 0.5;
+    float seed = grassHash(cell + vec2(31.7, 11.3));
+    float direction = step(0.5, grassHash(cell + vec2(4.1, 19.7))) * 2.0 - 1.0;
+
+    // A sparse pair of soft diagonal strokes reads as playful illustrated grass
+    // from the game camera, without introducing realistic blade geometry.
+    float bladeA = (1.0 - smoothstep(0.025, 0.065, abs(local.x + local.y * 0.34 * direction)))
+      * (1.0 - smoothstep(0.08, 0.30, abs(local.y)));
+    float bladeB = (1.0 - smoothstep(0.025, 0.065, abs(local.x - 0.12 - local.y * 0.28 * direction)))
+      * (1.0 - smoothstep(0.07, 0.23, abs(local.y + 0.04)));
+    return max(bladeA, bladeB) * smoothstep(0.72, 0.9, seed);
   }
 
   vec4 frag () {
-    // World-space sampling keeps the clay detail crisp even when the floor mesh is scaled.
-    // The baked map is deliberately not sampled: it used to contain the dark paths.
+    // World-space sampling keeps the casual grass pattern consistent across all
+    // differently-scaled floor sections. The old baked map is deliberately not
+    // sampled because it contains the former brown paths.
     vec2 ground = v_position.xz;
-    float macro = clayFbm(ground * macroScale + vec2(8.317, 3.971));
-    float detail = clayNoise(ground * detailScale + vec2(21.7, -14.2));
-    float grain = clayNoise(ground * grainScale + vec2(-7.3, 12.9));
-    float pore = clayPore(ground * grainScale * 0.72);
+    float macro = grassFbm(ground * macroScale + vec2(8.317, 3.971));
+    float detail = grassNoise(ground * detailScale + vec2(21.7, -14.2));
+    float grain = grassNoise(ground * grainScale + vec2(-7.3, 12.9));
+    float tufts = grassTufts(ground * grainScale * 0.55);
 
-    float clayTone = clamp(0.48 + (macro - 0.5) * 0.55 + (detail - 0.5) * 0.18, 0.0, 1.0);
-    vec3 clay = mix(darkColor.rgb, lightColor.rgb, clayTone);
-    clay *= 1.0 + (grain - 0.5) * grainStrength;
-    clay *= 1.0 - pore * 0.13;
+    float grassTone = clamp(0.52 + (macro - 0.5) * 0.72 + (detail - 0.5) * 0.20, 0.0, 1.0);
+    vec3 grass = mix(darkColor.rgb, lightColor.rgb, grassTone);
+    grass *= 1.0 + (grain - 0.5) * grainStrength;
+    grass = mix(grass, darkColor.rgb * 0.92, tufts * 0.28);
 
-    vec4 color = vec4(clay * mainColor.rgb * brightness, mainColor.a);
+    vec4 color = vec4(grass * mainColor.rgb * brightness, mainColor.a);
     CC_APPLY_FOG(color, v_position);
     return CCFragOutput(color);
   }

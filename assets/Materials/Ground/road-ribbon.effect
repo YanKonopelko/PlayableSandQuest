@@ -1,0 +1,137 @@
+CCEffect %{
+  techniques:
+  - name: transparent
+    passes:
+    - vert: legacy/main-functions/general-vs:vert
+      frag: road-ribbon-fs:frag
+      rasterizerState:
+        cullMode: none
+      depthStencilState:
+        depthTest: true
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: one
+          blendDstAlpha: one_minus_src_alpha
+      properties:
+        sandTexture: { value: white }
+        roadColor: { value: [0.50, 0.27, 0.10, 1.0], editor: { type: color } }
+        edgeColor: { value: [0.31, 0.15, 0.055, 1.0], editor: { type: color } }
+        trackColor: { value: [0.24, 0.105, 0.035, 1.0], editor: { type: color } }
+        grainScale: { value: 3.2, editor: { range: [0.5, 12.0, 0.1], slide: true } }
+        grainStrength: { value: 0.10, editor: { range: [0.0, 0.4, 0.01], slide: true } }
+        edgeSoftness: { value: 0.16, editor: { range: [0.01, 0.30, 0.005], slide: true } }
+        trackStrength: { value: 0.0, editor: { range: [0.0, 0.5, 0.01], slide: true } }
+}%
+
+CCProgram road-ribbon-fs %{
+  precision highp float;
+  #include <legacy/output>
+  #include <legacy/fog-fs>
+
+  in vec2 v_uv;
+  in vec3 v_position;
+
+  uniform sampler2D sandTexture;
+
+  uniform Constant {
+    vec4 roadColor;
+    vec4 edgeColor;
+    vec4 trackColor;
+    float grainScale;
+    float grainStrength;
+    float edgeSoftness;
+    float trackStrength;
+  };
+
+  float hash21(vec2 point) {
+    point = fract(point * vec2(123.34, 456.21));
+    point += dot(point, point + 45.32);
+    return fract(point.x * point.y);
+  }
+
+  float valueNoise(vec2 point) {
+    vec2 cell = floor(point);
+    vec2 blend = fract(point);
+    blend = blend * blend * (3.0 - 2.0 * blend);
+    float a = hash21(cell);
+    float b = hash21(cell + vec2(1.0, 0.0));
+    float c = hash21(cell + vec2(0.0, 1.0));
+    float d = hash21(cell + vec2(1.0, 1.0));
+    return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
+  }
+
+  vec4 frag () {
+    float across = clamp(v_uv.x, 0.0, 1.0);
+    float fromEdge = min(across, 1.0 - across) * 2.0;
+    vec2 roadUv = vec2((across - 0.5) * 6.0, v_uv.y * 0.48);
+    vec2 diagonalUvA = mat2(0.82, -0.57, 0.57, 0.82) * roadUv;
+    vec2 diagonalUvB = mat2(0.34, 0.94, -0.94, 0.34) * roadUv;
+    float broadNoise = valueNoise(diagonalUvA * grainScale * 0.28);
+    float middleNoise = valueNoise(diagonalUvB * grainScale * 0.62);
+    float fineNoise = valueNoise((diagonalUvA + diagonalUvB * 0.37) * grainScale * 1.55);
+
+    float leftBreakup = (valueNoise(vec2(v_uv.y * 0.37, 5.6)) - 0.5) * 0.055;
+    float rightBreakup = (valueNoise(vec2(v_uv.y * 0.31, 19.4)) - 0.5) * 0.055;
+    float irregularEdge = min(across + leftBreakup, 1.0 - across + rightBreakup) * 2.0;
+    float body = smoothstep(0.0, edgeSoftness, irregularEdge);
+    float shoulder = smoothstep(0.0, 0.44, irregularEdge);
+    float grain = (broadNoise - 0.5) * grainStrength
+        + (middleNoise - 0.5) * grainStrength * 0.65
+        + (fineNoise - 0.5) * grainStrength * 0.25;
+
+    float patchField = broadNoise * 0.58 + middleNoise * 0.42;
+    float darkPatches = smoothstep(0.60, 0.78, patchField)
+        * smoothstep(0.04, 0.28, fromEdge);
+
+    float segment = floor(v_uv.y * 0.58);
+    float segmentPosition = fract(v_uv.y * 0.58);
+    float segmentShape = smoothstep(0.06, 0.24, segmentPosition)
+        * (1.0 - smoothstep(0.62, 0.92, segmentPosition));
+    float leftChance = step(0.57, hash21(vec2(segment, 13.4)));
+    float rightChance = step(0.63, hash21(vec2(segment, 27.1)));
+    float lateralJitter = (hash21(vec2(segment, 41.8)) - 0.5) * 0.16;
+    float curveJitter = (middleNoise - 0.5) * 0.08;
+    float leftTrack = 1.0 - smoothstep(
+        0.025,
+        0.075,
+        abs(across - (0.30 + lateralJitter + curveJitter))
+    );
+    float rightTrack = 1.0 - smoothstep(
+        0.025,
+        0.075,
+        abs(across - (0.70 + lateralJitter - curveJitter))
+    );
+    float tracks = max(leftTrack * leftChance, rightTrack * rightChance)
+        * segmentShape * trackStrength;
+
+    // Use the same soil texture as SandVolume. Sampling it in two directions
+    // keeps the grain isotropic instead of stretching it along the road.
+    vec2 sandUvA = vec2(
+        across * 1.62 + v_uv.y * 0.055,
+        v_uv.y * 0.34 - across * 0.16
+    );
+    vec2 sandUvB = vec2(
+        v_uv.y * 0.19 + across * 0.46,
+        -v_uv.y * 0.23 + across * 1.12
+    );
+    vec3 soilA = texture(sandTexture, sandUvA).rgb;
+    vec3 soilB = texture(sandTexture, sandUvB).rgb;
+    vec3 soil = mix(soilA, soilB, 0.28);
+    float soilLuma = dot(soil, vec3(0.299, 0.587, 0.114));
+    float matteTexture = mix(0.84, 1.10, smoothstep(0.08, 0.38, soilLuma));
+
+    vec3 color = mix(edgeColor.rgb, roadColor.rgb, shoulder);
+    color *= 1.0 + grain;
+    color *= matteTexture;
+    color = mix(color, trackColor.rgb, darkPatches * 0.10);
+    color = mix(color, trackColor.rgb, tracks);
+
+    vec4 result = vec4(color, body * roadColor.a);
+    CC_APPLY_FOG(result, v_position);
+    return CCFragOutput(result);
+  }
+}%

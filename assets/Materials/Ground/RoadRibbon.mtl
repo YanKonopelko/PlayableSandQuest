@@ -5,7 +5,7 @@
   "__editorExtras__": {},
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "b4c81fd0-0b13-4e89-a56d-ff376cf75d01",
+    "__uuid__": "bc8d5c63-9d25-48d7-86ed-eaf017805a31",
     "__expectedType__": "cc.EffectAsset"
   },
   "_techIdx": 0,
@@ -25,28 +25,32 @@
   ],
   "_props": [
     {
-      "mainTexture": {
-        "__uuid__": "4e994843-f885-4c81-bf51-8520236cb633@6c48a",
+      "sandTexture": {
+        "__uuid__": "569004ef-4402-4ad2-a5c1-47698ff45293@6c48a",
         "__expectedType__": "cc.Texture2D"
       },
-      "darkColor": {
+      "roadColor": {
         "__type__": "cc.Color",
-        "r": 82,
-        "g": 153,
-        "b": 65,
+        "r": 180,
+        "g": 140,
+        "b": 84,
+        "a": 245
+      },
+      "edgeColor": {
+        "__type__": "cc.Color",
+        "r": 151,
+        "g": 108,
+        "b": 63,
         "a": 255
       },
-      "lightColor": {
+      "trackColor": {
         "__type__": "cc.Color",
-        "r": 168,
-        "g": 218,
-        "b": 91,
+        "r": 137,
+        "g": 95,
+        "b": 55,
         "a": 255
       },
-      "macroScale": 0.19,
-      "detailScale": 2,
-      "grainScale": 20,
-      "grainStrength": 0.15
+      "edgeSoftness": 0.25
     }
   ]
 }

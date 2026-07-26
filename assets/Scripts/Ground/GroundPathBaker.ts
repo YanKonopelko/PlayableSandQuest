@@ -56,16 +56,16 @@ export class GroundPathBaker extends Component {
     @property({ type: CCInteger, min: 128, max: 2048, step: 128, tooltip: 'Square baked texture size.' })
     public bakeResolution = 512;
 
-    @property({ tooltip: 'Base dry clay colour.' })
-    public clayColor = new Color(184, 108, 67, 255);
+    @property({ tooltip: 'Base casual grass colour.' })
+    public clayColor = new Color(126, 190, 74, 255);
 
-    @property({ tooltip: 'Compressed and walked-on clay colour.' })
-    public pathColor = new Color(126, 76, 52, 255);
+    @property({ tooltip: 'Subtle darker grass variation.' })
+    public pathColor = new Color(92, 158, 61, 255);
 
-    @property({ min: 0, max: 0.5, step: 0.01, tooltip: 'Large-scale clay brightness variation.' })
+    @property({ min: 0, max: 0.5, step: 0.01, tooltip: 'Large-scale grass brightness variation.' })
     public macroVariation = 0.16;
 
-    @property({ min: 0, max: 0.25, step: 0.01, tooltip: 'Fine clay grain brightness variation.' })
+    @property({ min: 0, max: 0.25, step: 0.01, tooltip: 'Fine grass brightness variation.' })
     public fineVariation = 0.055;
 
     @property({ min: 0.1, max: 20, step: 0.1, tooltip: 'Number of broad colour patches over the floor.' })
@@ -74,7 +74,7 @@ export class GroundPathBaker extends Component {
     @property({ min: 1, max: 200, step: 1, tooltip: 'Frequency of the fine baked grain.' })
     public fineScale = 58;
 
-    @property({ step: 1, tooltip: 'Stable seed used by clay and edge noise.' })
+    @property({ step: 1, tooltip: 'Stable seed used by grass and edge noise.' })
     public seed = 8317;
 
     @property({ tooltip: 'Texture asset written by Ground Paths/Bake Selected Floor.' })

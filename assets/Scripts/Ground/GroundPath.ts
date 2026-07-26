@@ -6,7 +6,8 @@ const { ccclass, executeInEditMode, property } = _decorator;
 
 /**
  * An editor-authored ground path. Every direct child node is a control point.
- * The generated ribbon is only a preview and is disabled in a player build.
+ * By default the generated ribbon is an editor preview, but selected paths can
+ * keep the generated mesh in a player build (for example the main road).
  */
 @ccclass('GroundPath')
 @executeInEditMode(true)
@@ -29,16 +30,21 @@ export class GroundPath extends Component {
     @property({ type: Material, tooltip: 'Editor-only ribbon material.' })
     public previewMaterial: Material | null = null;
 
+    @property({ tooltip: 'Keep the generated ribbon visible in player builds.' })
+    public visibleInBuild = false;
+
+    @property({ min: 0, tooltip: 'Height above the control points, used to prevent z-fighting.' })
+    public heightOffset = 0.035;
+
     private generatedMesh: Mesh | null = null;
     private signature = '';
 
     protected onEnable(): void {
         const renderer = this.getOrCreateRenderer();
-        if (!EDITOR) {
+        if (!EDITOR && !this.visibleInBuild) {
             if (renderer) {
                 renderer.enabled = false;
             }
-            // Prevent even the empty editor update callback from being scheduled in builds.
             this.enabled = false;
             return;
         }
@@ -127,7 +133,7 @@ export class GroundPath extends Component {
 
             for (const side of [-1, 1]) {
                 const x = point.x + sideX * side;
-                const y = point.y + 0.035;
+                const y = point.y + this.heightOffset;
                 const z = point.z + sideZ * side;
                 positions.push(x, y, z);
                 normals.push(0, 1, 0);
@@ -171,6 +177,8 @@ export class GroundPath extends Component {
             this.edgeNoise,
             this.samplesPerSegment,
             this.closed ? 1 : 0,
+            this.visibleInBuild ? 1 : 0,
+            this.heightOffset,
             this.previewMaterial?.uuid ?? '',
         ];
         for (const child of this.node.children) {

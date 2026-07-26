@@ -5,7 +5,7 @@
   "__editorExtras__": {},
   "_native": "",
   "_effectAsset": {
-    "__uuid__": "b4c81fd0-0b13-4e89-a56d-ff376cf75d01",
+    "__uuid__": "3430f85e-f6d9-4222-9837-b80826fceeca",
     "__expectedType__": "cc.EffectAsset"
   },
   "_techIdx": 0,
@@ -18,35 +18,32 @@
       "depthStencilState": {},
       "blendState": {
         "targets": [
-          {}
+          {
+            "blendSrc": 6,
+            "blendDst": 7,
+            "blendDstAlpha": 7
+          }
         ]
       }
     }
   ],
   "_props": [
     {
-      "mainTexture": {
-        "__uuid__": "4e994843-f885-4c81-bf51-8520236cb633@6c48a",
-        "__expectedType__": "cc.Texture2D"
-      },
       "darkColor": {
         "__type__": "cc.Color",
-        "r": 82,
-        "g": 153,
-        "b": 65,
+        "r": 188,
+        "g": 148,
+        "b": 93,
         "a": 255
       },
       "lightColor": {
         "__type__": "cc.Color",
-        "r": 168,
-        "g": 218,
-        "b": 91,
+        "r": 235,
+        "g": 202,
+        "b": 139,
         "a": 255
       },
-      "macroScale": 0.19,
-      "detailScale": 2,
-      "grainScale": 20,
-      "grainStrength": 0.15
+      "brightness": 0.52
     }
   ]
 }
