@@ -4,8 +4,8 @@
   "imported": true,
   "uuid": "95987316-d942-4474-88a2-6e7773ba00ee",
   "files": [
-    ".jpg",
-    ".json"
+    ".json",
+    ".webp"
   ],
   "subMetas": {
     "6c48a": {
@@ -37,6 +37,10 @@
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
     "hasAlpha": false,
-    "redirect": "95987316-d942-4474-88a2-6e7773ba00ee@6c48a"
+    "redirect": "95987316-d942-4474-88a2-6e7773ba00ee@6c48a",
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "b3uuu1cQVG5JLfuk1szeqs"
+    }
   }
 }

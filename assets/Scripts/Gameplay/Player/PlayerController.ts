@@ -1,4 +1,5 @@
-import { _decorator, CapsuleCollider, CCFloat, Component, geometry, Node, PhysicsSystem, Vec2, Vec3 } from 'cc';
+import { _decorator, CapsuleCollider, CCFloat, Component, director, geometry, Node, PhysicsSystem, Vec2, Vec3 } from 'cc';
+import { AdaptiveCameraFollower } from '../Camera/AdaptiveCameraFollower';
 import { FloatingJoystick } from '../Input/FloatingJoystick';
 import { RequiredReference } from '../Core/RequiredReference';
 import { PlayerAnimationController } from './PlayerAnimationController';
@@ -11,14 +12,14 @@ export class PlayerController extends Component {
     @property(FloatingJoystick)
     public joystick: FloatingJoystick | null = null;
 
+    @property(AdaptiveCameraFollower)
+    public cameraFollower: AdaptiveCameraFollower | null = null;
+
     @property(Node)
     public movementRoot: Node | null = null;
 
     @property(Node)
     public visualRoot: Node | null = null;
-
-    @property(Node)
-    public backpackRoot: Node | null = null;
 
     @property(PlayerAnimationController)
     public animationController: PlayerAnimationController | null = null;
@@ -72,6 +73,9 @@ export class PlayerController extends Component {
         RequiredReference.Check(this, this.joystick, 'joystick');
         RequiredReference.Check(this, this.movementCollider, 'movementCollider');
 
+        this.cameraFollower ??= director.getScene()?.getComponentInChildren(AdaptiveCameraFollower) ?? null;
+        RequiredReference.Check(this, this.cameraFollower, 'cameraFollower');
+
         if (!this.movementRoot) {
             this.movementRoot = this.node;
         }
@@ -79,10 +83,6 @@ export class PlayerController extends Component {
         if (!this.visualRoot) {
             this.visualRoot = this.movementRoot;
         }
-
-        this.backpackRoot ??= this.FindDescendantByName(this.visualRoot, 'Backpack');
-        RequiredReference.CheckNode(this, this.backpackRoot, 'backpackRoot');
-        this.SetBackpackActive(false);
     }
 
     protected update(dt: number): void {
@@ -110,8 +110,9 @@ export class PlayerController extends Component {
             return;
         }
 
-        this.moveVector.set(input.x, 0, -input.y);
-        this.moveVector.normalize();
+        const joystickAngle = Math.atan2(input.x, -input.y);
+        const movementAngle = joystickAngle + (this.cameraFollower?.yaw ?? 0) * Math.PI / 180;
+        this.moveVector.set(Math.sin(movementAngle), 0, Math.cos(movementAngle));
         this.lastDirection.set(this.moveVector);
 
         const normalizedInput = Math.min(1, Math.max(
@@ -145,7 +146,6 @@ export class PlayerController extends Component {
 
     public SetVacuumVisualEnabled(value: boolean): void {
         this.animationController?.SetVacuumEnabled(value);
-        this.SetBackpackActive(value);
     }
 
     public RunAutomaticallyTo(target: Node, onComplete?: () => void): void {
@@ -370,28 +370,5 @@ export class PlayerController extends Component {
     private LerpAngle(a: number, b: number, t: number): number {
         let delta = (b - a + 540) % 360 - 180;
         return a + delta * t;
-    }
-
-    private SetBackpackActive(value: boolean): void {
-        if (this.backpackRoot) {
-            this.backpackRoot.active = value;
-        }
-    }
-
-    private FindDescendantByName(root: Node | null, name: string): Node | null {
-        if (!root) {
-            return null;
-        }
-        if (root.name === name) {
-            return root;
-        }
-
-        for (const child of root.children) {
-            const match = this.FindDescendantByName(child, name);
-            if (match) {
-                return match;
-            }
-        }
-        return null;
     }
 }

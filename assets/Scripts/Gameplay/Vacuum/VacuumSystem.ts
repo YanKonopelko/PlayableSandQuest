@@ -24,9 +24,6 @@ export class VacuumSystem extends Component {
     @property(Node)
     public playerFacingRoot: Node | null = null;
 
-    @property(Node)
-    public backpackTubeRoot: Node | null = null;
-
     @property(Prefab)
     public tubePartPrefab: Prefab | null = null;
 
@@ -47,6 +44,15 @@ export class VacuumSystem extends Component {
 
     @property({ type: CCFloat })
     public bendAmplitude: number = 0.35;
+
+    @property({ type: CCFloat, min: 0.1, tooltip: 'Horizontal distance kept between the hose and the player.' })
+    public playerHoseClearance: number = 0.8;
+
+    @property({ type: CCFloat, min: 0.1, tooltip: 'How far behind the player the hose is routed.' })
+    public hoseBehindDistance: number = 0.9;
+
+    @property({ type: CCFloat, min: 0.05, tooltip: 'Radius used to round hose route corners.' })
+    public hoseCornerRadius: number = 0.35;
 
     @property({ type: CCFloat })
     public headFlyDuration: number = 0.35;
@@ -73,6 +79,13 @@ export class VacuumSystem extends Component {
     private headAttached: boolean = false;
     private returningHome: boolean = false;
     private headTransitionVersion: number = 0;
+    private hoseSideSign: number = 1;
+    private readonly routeControlPoints: Vec3[] = Array.from({ length: 32 }, () => new Vec3());
+    private readonly routePoints: Vec3[] = Array.from({ length: 512 }, () => new Vec3());
+    private readonly routeSegmentLengths: number[] = new Array<number>(511).fill(0);
+    private readonly playerForward: Vec3 = new Vec3(0, 0, 1);
+    private readonly playerRight: Vec3 = new Vec3(1, 0, 0);
+    private readonly flatDirection: Vec3 = new Vec3();
 
     public get IsActive(): boolean {
         return this.active;
@@ -93,8 +106,6 @@ export class VacuumSystem extends Component {
         RequiredReference.CheckNode(this, this.tubeHeadHomePivot, 'tubeHeadHomePivot');
         RequiredReference.CheckNode(this, this.playerHandPivot, 'playerHandPivot');
         RequiredReference.CheckNode(this, this.playerFacingRoot, 'playerFacingRoot');
-        this.backpackTubeRoot ??= this.FindDescendantByName(this.playerFacingRoot, 'TubeRoot');
-        RequiredReference.CheckNode(this, this.backpackTubeRoot, 'backpackTubeRoot');
         RequiredReference.Check(this, this.tubePartPrefab, 'tubePartPrefab');
         RequiredReference.CheckNode(this, this.tubePartsRoot, 'tubePartsRoot');
         this.SnapHeadHome();
@@ -241,34 +252,273 @@ export class VacuumSystem extends Component {
     }
 
     private RebuildTube(): void {
-        if (!this.machinePivot || !this.backpackTubeRoot) {
+        if (!this.machinePivot || !this.tubeHead) {
             return;
         }
 
         const start = this.machinePivot.worldPosition;
-        const end = this.backpackTubeRoot.worldPosition;
-        const distance = Vec3.distance(start, end);
-        const count = Math.max(1, Math.ceil(distance / Math.max(0.1, this.segmentLength)));
+        const end = this.tubeHead.worldPosition;
+        const pointCount = this.BuildTubeRoute(start, end);
+        let routeLength = 0;
+        for (let i = 0; i < pointCount - 1; i++) {
+            const length = Vec3.distance(this.routePoints[i], this.routePoints[i + 1]);
+            this.routeSegmentLengths[i] = length;
+            routeLength += length;
+        }
+
+        const count = Math.max(1, Math.ceil(routeLength / Math.max(0.1, this.segmentLength)));
         this.EnsureSegmentCount(count);
-        const directionX = end.x - start.x;
-        const directionZ = end.z - start.z;
-        const hasDirection = directionX * directionX + directionZ * directionZ > 0.001;
-        const yaw = hasDirection
-            ? Math.atan2(directionX, directionZ) * 180 / Math.PI
-            : 0;
 
         for (let i = 0; i < this.activeTubePartCount; i++) {
             const t = (i + 0.5) / count;
             const part = this.tubeParts[i];
-            part.setWorldPosition(
-                start.x + directionX * t,
-                start.y + (end.y - start.y) * t + Math.sin(t * Math.PI) * this.bendAmplitude,
-                start.z + directionZ * t,
-            );
-            if (hasDirection) {
-                part.setRotationFromEuler(0, yaw, 0);
+            let distanceAlongRoute = routeLength * t;
+            let segmentIndex = 0;
+            while (segmentIndex < pointCount - 2 && distanceAlongRoute > this.routeSegmentLengths[segmentIndex]) {
+                distanceAlongRoute -= this.routeSegmentLengths[segmentIndex];
+                segmentIndex++;
+            }
+
+            const segmentStart = this.routePoints[segmentIndex];
+            const segmentEnd = this.routePoints[segmentIndex + 1];
+            const segmentLength = Math.max(0.0001, this.routeSegmentLengths[segmentIndex]);
+            const segmentT = Math.min(1, distanceAlongRoute / segmentLength);
+            Vec3.lerp(this.flatDirection, segmentStart, segmentEnd, segmentT);
+            this.flatDirection.y += Math.sin(t * Math.PI) * this.bendAmplitude;
+            part.setWorldPosition(this.flatDirection);
+
+            const directionX = segmentEnd.x - segmentStart.x;
+            const directionZ = segmentEnd.z - segmentStart.z;
+            if (directionX * directionX + directionZ * directionZ > 0.001) {
+                part.setRotationFromEuler(0, Math.atan2(directionX, directionZ) * 180 / Math.PI, 0);
             }
         }
+    }
+
+    private BuildTubeRoute(start: Readonly<Vec3>, end: Readonly<Vec3>): number {
+        this.routeControlPoints[0].set(start);
+
+        if (!this.playerFacingRoot) {
+            this.routeControlPoints[1].set(end);
+            return this.RoundRouteCorners(2);
+        }
+
+        const playerPosition = this.playerFacingRoot.worldPosition;
+        Vec3.transformQuat(this.playerForward, Vec3.UNIT_Z, this.playerFacingRoot.worldRotation);
+        this.playerForward.y = 0;
+        if (this.playerForward.lengthSqr() <= 0.0001) {
+            this.playerForward.set(0, 0, 1);
+        } else {
+            this.playerForward.normalize();
+        }
+        this.playerRight.set(this.playerForward.z, 0, -this.playerForward.x);
+
+        const endSide = (end.x - playerPosition.x) * this.playerRight.x
+            + (end.z - playerPosition.z) * this.playerRight.z;
+        if (Math.abs(endSide) > 0.002) {
+            this.hoseSideSign = endSide < 0 ? -1 : 1;
+        }
+
+        const clearance = Math.max(0.1, this.playerHoseClearance);
+        const behindDistance = Math.max(0.1, this.hoseBehindDistance);
+        const routeRadius = Math.max(clearance, behindDistance);
+        const approachAngle = Math.atan2(this.hoseSideSign * clearance, -clearance * 0.15);
+        const approachForward = Math.cos(approachAngle) * routeRadius;
+        const approachRight = Math.sin(approachAngle) * routeRadius;
+        const approachX = playerPosition.x
+            + this.playerForward.x * approachForward
+            + this.playerRight.x * approachRight;
+        const approachZ = playerPosition.z
+            + this.playerForward.z * approachForward
+            + this.playerRight.z * approachRight;
+        const startX = start.x - playerPosition.x;
+        const startZ = start.z - playerPosition.z;
+        const startDistanceSqr = startX * startX + startZ * startZ;
+        const routeRadiusSqr = routeRadius * routeRadius;
+        let pointCount = 1;
+        let tangentAngle = approachAngle;
+
+        if (startDistanceSqr >= clearance * clearance
+            && this.GetSegmentDistanceSqrXZ(start, approachX, approachZ, playerPosition) >= clearance * clearance
+            && this.IsDirectRouteTurnSmooth(start, approachX, approachZ, end)) {
+            this.routeControlPoints[pointCount++].set(approachX, playerPosition.y, approachZ);
+            this.routeControlPoints[pointCount++].set(end);
+            return this.RoundRouteCorners(pointCount);
+        }
+
+        if (startDistanceSqr > routeRadiusSqr + 0.0001) {
+            const baseScale = routeRadiusSqr / startDistanceSqr;
+            const tangentScale = routeRadius * Math.sqrt(startDistanceSqr - routeRadiusSqr) / startDistanceSqr;
+            const tangent1X = startX * baseScale - startZ * tangentScale;
+            const tangent1Z = startZ * baseScale + startX * tangentScale;
+            const tangent2X = startX * baseScale + startZ * tangentScale;
+            const tangent2Z = startZ * baseScale - startX * tangentScale;
+            const tangent1Angle = this.GetPlayerLocalAngle(tangent1X, tangent1Z);
+            const tangent2Angle = this.GetPlayerLocalAngle(tangent2X, tangent2Z);
+            const tangent1Delta = this.GetShortestAngleDelta(tangent1Angle, approachAngle);
+            const tangent2Delta = this.GetShortestAngleDelta(tangent2Angle, approachAngle);
+            const useFirstTangent = Math.abs(tangent1Delta) <= Math.abs(tangent2Delta);
+            const tangentX = useFirstTangent ? tangent1X : tangent2X;
+            const tangentZ = useFirstTangent ? tangent1Z : tangent2Z;
+            tangentAngle = useFirstTangent ? tangent1Angle : tangent2Angle;
+            this.routeControlPoints[pointCount++].set(
+                playerPosition.x + tangentX,
+                playerPosition.y,
+                playerPosition.z + tangentZ,
+            );
+        } else if (startDistanceSqr > 0.0001) {
+            const startDistance = Math.sqrt(startDistanceSqr);
+            tangentAngle = this.GetPlayerLocalAngle(startX, startZ);
+            this.routeControlPoints[pointCount++].set(
+                playerPosition.x + startX / startDistance * routeRadius,
+                playerPosition.y,
+                playerPosition.z + startZ / startDistance * routeRadius,
+            );
+        }
+
+        const approachRouteAngle = tangentAngle + this.GetShortestAngleDelta(tangentAngle, approachAngle);
+        pointCount = this.AppendRouteArc(pointCount, tangentAngle, approachRouteAngle, routeRadius, playerPosition);
+        this.routeControlPoints[pointCount++].set(end);
+        return this.RoundRouteCorners(pointCount);
+    }
+
+    private GetPlayerLocalAngle(worldOffsetX: number, worldOffsetZ: number): number {
+        const forwardAmount = worldOffsetX * this.playerForward.x + worldOffsetZ * this.playerForward.z;
+        const rightAmount = worldOffsetX * this.playerRight.x + worldOffsetZ * this.playerRight.z;
+        return Math.atan2(rightAmount, forwardAmount);
+    }
+
+    private GetShortestAngleDelta(fromAngle: number, toAngle: number): number {
+        return (toAngle - fromAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+    }
+
+    private GetSegmentDistanceSqrXZ(
+        start: Readonly<Vec3>,
+        endX: number,
+        endZ: number,
+        point: Readonly<Vec3>,
+    ): number {
+        const segmentX = endX - start.x;
+        const segmentZ = endZ - start.z;
+        const segmentLengthSqr = segmentX * segmentX + segmentZ * segmentZ;
+        if (segmentLengthSqr <= 0.0001) {
+            const pointX = point.x - start.x;
+            const pointZ = point.z - start.z;
+            return pointX * pointX + pointZ * pointZ;
+        }
+
+        const projection = Math.max(0, Math.min(1,
+            ((point.x - start.x) * segmentX + (point.z - start.z) * segmentZ) / segmentLengthSqr,
+        ));
+        const closestX = start.x + segmentX * projection;
+        const closestZ = start.z + segmentZ * projection;
+        const pointX = point.x - closestX;
+        const pointZ = point.z - closestZ;
+        return pointX * pointX + pointZ * pointZ;
+    }
+
+    private IsDirectRouteTurnSmooth(
+        start: Readonly<Vec3>,
+        cornerX: number,
+        cornerZ: number,
+        end: Readonly<Vec3>,
+    ): boolean {
+        const incomingX = cornerX - start.x;
+        const incomingZ = cornerZ - start.z;
+        const outgoingX = end.x - cornerX;
+        const outgoingZ = end.z - cornerZ;
+        const incomingLength = Math.sqrt(incomingX * incomingX + incomingZ * incomingZ);
+        const outgoingLength = Math.sqrt(outgoingX * outgoingX + outgoingZ * outgoingZ);
+        if (incomingLength <= 0.0001 || outgoingLength <= 0.0001) {
+            return true;
+        }
+
+        const directionDot = (incomingX * outgoingX + incomingZ * outgoingZ)
+            / (incomingLength * outgoingLength);
+        return directionDot >= Math.cos(Math.PI * 5 / 12);
+    }
+
+    private AppendRouteArc(
+        pointCount: number,
+        fromAngle: number,
+        toAngle: number,
+        radius: number,
+        center: Readonly<Vec3>,
+    ): number {
+        const maxAngleStep = Math.PI / 12;
+        const stepCount = Math.max(1, Math.ceil(Math.abs(toAngle - fromAngle) / maxAngleStep));
+        for (let i = 1; i <= stepCount && pointCount < this.routeControlPoints.length - 1; i++) {
+            const angle = fromAngle + (toAngle - fromAngle) * i / stepCount;
+            const forwardAmount = Math.cos(angle) * radius;
+            const rightAmount = Math.sin(angle) * radius;
+            this.routeControlPoints[pointCount++].set(
+                center.x + this.playerForward.x * forwardAmount + this.playerRight.x * rightAmount,
+                center.y,
+                center.z + this.playerForward.z * forwardAmount + this.playerRight.z * rightAmount,
+            );
+        }
+        return pointCount;
+    }
+
+    private RoundRouteCorners(controlPointCount: number): number {
+        if (controlPointCount <= 0) {
+            return 0;
+        }
+
+        let routePointCount = 0;
+        this.routePoints[routePointCount++].set(this.routeControlPoints[0]);
+        const cornerRadius = Math.max(0.05, this.hoseCornerRadius);
+        for (let i = 1; i < controlPointCount - 1 && routePointCount < this.routePoints.length - 14; i++) {
+            const previous = this.routeControlPoints[i - 1];
+            const corner = this.routeControlPoints[i];
+            const next = this.routeControlPoints[i + 1];
+            const incomingX = corner.x - previous.x;
+            const incomingY = corner.y - previous.y;
+            const incomingZ = corner.z - previous.z;
+            const outgoingX = next.x - corner.x;
+            const outgoingY = next.y - corner.y;
+            const outgoingZ = next.z - corner.z;
+            const incomingLength = Math.sqrt(
+                incomingX * incomingX + incomingY * incomingY + incomingZ * incomingZ,
+            );
+            const outgoingLength = Math.sqrt(
+                outgoingX * outgoingX + outgoingY * outgoingY + outgoingZ * outgoingZ,
+            );
+            if (incomingLength <= 0.0001 || outgoingLength <= 0.0001) {
+                continue;
+            }
+
+            const trimDistance = Math.min(cornerRadius, incomingLength * 0.45, outgoingLength * 0.45);
+            const entry = this.routePoints[routePointCount++];
+            entry.set(
+                corner.x - incomingX / incomingLength * trimDistance,
+                corner.y - incomingY / incomingLength * trimDistance,
+                corner.z - incomingZ / incomingLength * trimDistance,
+            );
+            const exitX = corner.x + outgoingX / outgoingLength * trimDistance;
+            const exitY = corner.y + outgoingY / outgoingLength * trimDistance;
+            const exitZ = corner.z + outgoingZ / outgoingLength * trimDistance;
+            const directionDot = Math.max(-1, Math.min(1,
+                (incomingX * outgoingX + incomingY * outgoingY + incomingZ * outgoingZ)
+                / (incomingLength * outgoingLength),
+            ));
+            const turnAngle = Math.acos(directionDot);
+            const curveStepCount = Math.max(3, Math.ceil(turnAngle / (Math.PI / 12)));
+            for (let step = 1; step <= curveStepCount; step++) {
+                const t = step / curveStepCount;
+                const oneMinusT = 1 - t;
+                const startWeight = oneMinusT * oneMinusT;
+                const cornerWeight = 2 * oneMinusT * t;
+                const endWeight = t * t;
+                this.routePoints[routePointCount++].set(
+                    entry.x * startWeight + corner.x * cornerWeight + exitX * endWeight,
+                    entry.y * startWeight + corner.y * cornerWeight + exitY * endWeight,
+                    entry.z * startWeight + corner.z * cornerWeight + exitZ * endWeight,
+                );
+            }
+        }
+        this.routePoints[routePointCount++].set(this.routeControlPoints[controlPointCount - 1]);
+        return routePointCount;
     }
 
     private EnsureSegmentCount(count: number): void {
@@ -333,22 +583,5 @@ export class VacuumSystem extends Component {
         for (const renderer of renderers) {
             renderer.setMaterial(material, 0);
         }
-    }
-
-    private FindDescendantByName(root: Node | null, name: string): Node | null {
-        if (!root) {
-            return null;
-        }
-        if (root.name === name) {
-            return root;
-        }
-
-        for (const child of root.children) {
-            const match = this.FindDescendantByName(child, name);
-            if (match) {
-                return match;
-            }
-        }
-        return null;
     }
 }
