@@ -354,24 +354,45 @@ export class GameFlowController extends Component {
         let transferred = 0;
 
         for (let i = 0; i < amount; i++) {
-            if (!this.cartQueue?.TryGiveGold(1)) {
+            if (!this.inventory?.TryRemove(EItemType.GoldOre, 1)) {
                 break;
             }
 
-            this.inventory?.TryRemove(EItemType.GoldOre, 1);
             transferred++;
-
-            if (this.flyService && this.goldFlyPrefab && target) {
-                this.flyService.FlyPrefabToNode(this.goldFlyPrefab, start.clone(), target, undefined, 0.25 + i * 0.03);
-            }
         }
 
-        if (transferred > 0) {
-            this.GiveMoneyAfterExchange(transferred);
+        if (transferred <= 0) {
+            this.exchangeInProgress = false;
             return;
         }
 
-        this.exchangeInProgress = false;
+        let arrived = 0;
+        const onOneGoldArrived = () => {
+            activeCart?.ReceiveGold(1);
+            arrived++;
+
+            if (arrived >= transferred) {
+                this.GiveMoneyAfterExchange(transferred);
+            }
+        };
+
+        for (let i = 0; i < transferred; i++) {
+            if (this.flyService && this.goldFlyPrefab && target) {
+                const flyingItem = this.flyService.FlyPrefabToNode(
+                    this.goldFlyPrefab,
+                    start.clone(),
+                    target,
+                    onOneGoldArrived,
+                    0.75 + i * 0.03,
+                    1.7,
+                );
+                if (flyingItem) {
+                    continue;
+                }
+            }
+
+            onOneGoldArrived();
+        }
     }
 
     private GiveMoneyAfterExchange(amount: number): void {

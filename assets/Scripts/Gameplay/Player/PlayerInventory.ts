@@ -1,4 +1,4 @@
-import { _decorator, Component } from 'cc';
+import { _decorator, Camera, Component, director, Node } from 'cc';
 import { EItemType } from '../Items/ItemType';
 import { ItemStackView } from '../Items/ItemStackView';
 
@@ -17,9 +17,13 @@ export class PlayerInventory extends Component {
     @property([ItemStackView])
     public itemStacks: ItemStackView[] = [];
 
+    @property(Node)
+    public maxGoldIndicator: Node | null = null;
+
     private readonly counts: number[] = [0, 0, 0];
     private readonly reservedCounts: number[] = [0, 0, 0];
     private goldOreCapacity: number = PlayerInventory.GOLD_ORE_CAPACITIES[0];
+    private sceneCamera: Camera | null = null;
 
     public GetCount(itemType: EItemType): number {
         return this.counts[itemType] ?? 0;
@@ -45,6 +49,7 @@ export class PlayerInventory extends Component {
         const safeLevel = Number.isFinite(upgradeLevel) ? Math.floor(upgradeLevel) : 0;
         const capacityIndex = Math.max(0, Math.min(PlayerInventory.GOLD_ORE_CAPACITIES.length - 1, safeLevel));
         this.goldOreCapacity = PlayerInventory.GOLD_ORE_CAPACITIES[capacityIndex];
+        this.RefreshMaxGoldIndicator();
     }
 
     public TryReserve(itemType: EItemType, amount: number = 1): boolean {
@@ -85,6 +90,21 @@ export class PlayerInventory extends Component {
 
     protected start(): void {
         this.RefreshStackViews(null, false);
+    }
+
+    protected lateUpdate(): void {
+        if (!this.maxGoldIndicator?.activeInHierarchy) {
+            return;
+        }
+
+        if (!this.sceneCamera || !this.sceneCamera.isValid) {
+            this.sceneCamera = director.getScene()
+                ?.getComponentsInChildren(Camera)
+                .find((camera) => camera.enabled && camera.node.activeInHierarchy) ?? null;
+        }
+        if (this.sceneCamera) {
+            this.maxGoldIndicator.setWorldRotation(this.sceneCamera.node.worldRotation);
+        }
     }
 
     private GetStackView(itemType: EItemType): ItemStackView | null {
@@ -133,6 +153,7 @@ export class PlayerInventory extends Component {
 
         const sharedRoot = stackViews.find((entry) => entry.view.root)?.view.root;
         if (!sharedRoot) {
+            this.RefreshMaxGoldIndicator();
             return;
         }
 
@@ -144,6 +165,14 @@ export class PlayerInventory extends Component {
                 animate && entry.itemType === animatedItemType,
             );
             startHeight += entry.view.VisibleInventoryStackHeight;
+        }
+
+        this.RefreshMaxGoldIndicator();
+    }
+
+    private RefreshMaxGoldIndicator(): void {
+        if (this.maxGoldIndicator) {
+            this.maxGoldIndicator.active = this.GetCount(EItemType.GoldOre) >= this.goldOreCapacity;
         }
     }
 }
