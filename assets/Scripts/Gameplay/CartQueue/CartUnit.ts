@@ -166,13 +166,17 @@ export class CartUnit extends Component {
         }
     }
 
-    public ReceiveGold(amount: number = 1): void {
+    public CreateGoldDeliveryTarget(slotOffset: number = 0): Node | null {
+        return this.fillStack?.CreateItemTarget(this.gold + Math.max(0, Math.floor(slotOffset))) ?? null;
+    }
+
+    public ReceiveGold(amount: number = 1, animate: boolean = true): void {
         if (this.IsFilled) {
             return;
         }
 
         this.gold = Math.min(this.requiredGold, this.gold + Math.max(0, amount));
-        this.fillStack?.SetCount(this.gold);
+        this.fillStack?.SetCount(this.gold, animate);
 
         if (this.IsFilled) {
             this.onFilled.Invoke(this);

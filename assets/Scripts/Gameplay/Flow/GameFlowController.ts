@@ -350,14 +350,23 @@ export class GameFlowController extends Component {
     private TransferGoldToCart(amount: number): void {
         const activeCart = this.cartQueue?.ActiveCart;
         const target = activeCart?.receivePivot ?? activeCart?.node;
-        const start = this.playerItemFlyStart?.worldPosition ?? this.player?.node.worldPosition ?? new Vec3();
+        const fallbackStart = this.playerItemFlyStart?.worldPosition ?? this.player?.node.worldPosition ?? new Vec3();
+        const initialGoldCount = this.inventory?.GetCount(EItemType.GoldOre) ?? 0;
+        const startPositions: Vec3[] = [];
         let transferred = 0;
 
         for (let i = 0; i < amount; i++) {
+            const visibleGoldCount = this.inventory?.goldOreStack?.VisibleCount
+                ?? initialGoldCount - transferred;
+            const stackIndex = Math.max(0, visibleGoldCount - 1);
+            const itemStart = this.inventory?.goldOreStack?.GetItemWorldPosition(stackIndex)
+                ?? fallbackStart.clone();
+
             if (!this.inventory?.TryRemove(EItemType.GoldOre, 1)) {
                 break;
             }
 
+            startPositions.push(itemStart);
             transferred++;
         }
 
@@ -368,7 +377,7 @@ export class GameFlowController extends Component {
 
         let arrived = 0;
         const onOneGoldArrived = () => {
-            activeCart?.ReceiveGold(1);
+            activeCart?.ReceiveGold(1, false);
             arrived++;
 
             if (arrived >= transferred) {
@@ -377,21 +386,31 @@ export class GameFlowController extends Component {
         };
 
         for (let i = 0; i < transferred; i++) {
-            if (this.flyService && this.goldFlyPrefab && target) {
+            const slotTarget = activeCart?.CreateGoldDeliveryTarget(i);
+            const flightTarget = slotTarget ?? target;
+            const onGoldArrived = () => {
+                if (slotTarget?.isValid) {
+                    slotTarget.destroy();
+                }
+                onOneGoldArrived();
+            };
+
+            if (this.flyService && this.goldFlyPrefab && flightTarget) {
                 const flyingItem = this.flyService.FlyPrefabToNode(
                     this.goldFlyPrefab,
-                    start.clone(),
-                    target,
-                    onOneGoldArrived,
+                    startPositions[i] ?? fallbackStart.clone(),
+                    flightTarget,
+                    onGoldArrived,
                     0.75 + i * 0.03,
                     1.7,
+                    !!slotTarget,
                 );
                 if (flyingItem) {
                     continue;
                 }
             }
 
-            onOneGoldArrived();
+            onGoldArrived();
         }
     }
 

@@ -1,4 +1,4 @@
-import { Vec3 } from "cc";
+import { Quat, Vec3 } from "cc";
 import { tween, Node } from "cc";
 
 
@@ -138,10 +138,25 @@ export class TweenUtils {
         });
     }
 
-    public static async FlyTweenWithMidlePointAndScaleToNode(nodeToFly: Node, addVec: Vec3, targetNode: Node, targetScale: number, FinishCallback: CallableFunction, time: number = 0.15) {
+    public static async FlyTweenWithMidlePointAndScaleToNode(
+        nodeToFly: Node,
+        addVec: Vec3,
+        targetNode: Node,
+        targetScale: number,
+        FinishCallback: CallableFunction,
+        time: number = 0.15,
+        matchTargetWorldTransform: boolean = false,
+    ) {
         if (!nodeToFly || !targetNode) {
             return;
         }
+
+        const startWorldScale = nodeToFly.getWorldScale().clone();
+        const currentTargetWorldScale = new Vec3();
+        const currentWorldScale = new Vec3();
+        const startWorldRotation = nodeToFly.getWorldRotation().clone();
+        const currentTargetWorldRotation = new Quat();
+        const currentWorldRotation = new Quat();
 
         const startPosition = new Vec3();
         nodeToFly.getWorldPosition(startPosition);
@@ -158,6 +173,10 @@ export class TweenUtils {
         if (clampTime === 0) {
             targetNode.getWorldPosition(currentTargetPosition);
             nodeToFly.setWorldPosition(currentTargetPosition);
+            if (matchTargetWorldTransform) {
+                nodeToFly.setWorldScale(targetNode.getWorldScale());
+                nodeToFly.setWorldRotation(targetNode.getWorldRotation());
+            }
             FinishCallback && FinishCallback();
             return;
         }
@@ -214,13 +233,28 @@ export class TweenUtils {
                         nodeToFly.setWorldPosition(bezierPoint);
 
                         // Применяем скейл: максимальный в середине
-                        const currentScale = getScale(rawT);
-                        nodeToFly.setScale(currentScale, currentScale, currentScale);
+                        if (matchTargetWorldTransform) {
+                            targetNode.getWorldScale(currentTargetWorldScale);
+                            Vec3.lerp(currentWorldScale, startWorldScale, currentTargetWorldScale, easedT);
+                            nodeToFly.setWorldScale(currentWorldScale);
+
+                            targetNode.getWorldRotation(currentTargetWorldRotation);
+                            Quat.slerp(currentWorldRotation, startWorldRotation, currentTargetWorldRotation, easedT);
+                            nodeToFly.setWorldRotation(currentWorldRotation);
+                        } else {
+                            const currentScale = getScale(rawT);
+                            nodeToFly.setScale(currentScale, currentScale, currentScale);
+                        }
                     }
                 })
                 .call(() => {
                     // Убеждаемся, что скейл вернулся к исходному
-                    nodeToFly.setScale(startScale, startScale, startScale);
+                    if (matchTargetWorldTransform) {
+                        nodeToFly.setWorldScale(targetNode.getWorldScale());
+                        nodeToFly.setWorldRotation(targetNode.getWorldRotation());
+                    } else {
+                        nodeToFly.setScale(startScale, startScale, startScale);
+                    }
                     FinishCallback && FinishCallback();
                     resolve();
                 })

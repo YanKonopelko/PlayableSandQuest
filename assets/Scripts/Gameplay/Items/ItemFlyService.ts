@@ -26,6 +26,7 @@ export class ItemFlyService extends Component {
         onComplete?: () => void,
         duration: number = this.defaultDuration,
         arcHeight: number = this.defaultArcHeight,
+        matchTargetWorldTransform: boolean = false,
     ): Node | null {
         if (!this.flyRoot || !prefab || !target) {
             console.error('[ItemFlyService] Missing flyRoot, prefab or target.');
@@ -46,6 +47,7 @@ export class ItemFlyService extends Component {
                 onComplete && onComplete();
             },
             duration,
+            matchTargetWorldTransform,
         );
 
         return item;
@@ -57,6 +59,7 @@ export class ItemFlyService extends Component {
         onComplete?: () => void,
         duration: number = this.defaultDuration,
         arcHeight: number = this.defaultArcHeight,
+        matchTargetWorldTransform: boolean = false,
     ): void {
         if (!item || !target) {
             console.error('[ItemFlyService] Missing item or target.');
@@ -70,6 +73,7 @@ export class ItemFlyService extends Component {
             1.25,
             () => onComplete && onComplete(),
             duration,
+            matchTargetWorldTransform,
         );
     }
 }

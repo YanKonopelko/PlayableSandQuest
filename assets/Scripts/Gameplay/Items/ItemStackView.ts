@@ -69,6 +69,32 @@ export class ItemStackView extends Component {
         this.RefreshItems(false);
     }
 
+    public CreateItemTarget(index: number): Node | null {
+        if (!this.root) {
+            return null;
+        }
+
+        const target = new Node(`ItemTarget_${index}`);
+        this.root.addChild(target);
+        target.setPosition(this.GetItemPosition(Math.max(0, Math.floor(index))));
+        target.setScale(Vec3.ONE);
+        return target;
+    }
+
+    public GetItemWorldPosition(index: number, out: Vec3 = new Vec3()): Vec3 {
+        const safeIndex = Math.max(0, Math.floor(index));
+        const item = this.items[safeIndex];
+        if (item?.activeInHierarchy) {
+            return item.getWorldPosition(out);
+        }
+
+        if (this.root) {
+            return Vec3.transformMat4(out, this.GetItemPosition(safeIndex), this.root.worldMatrix);
+        }
+
+        return this.node.getWorldPosition(out);
+    }
+
     private RefreshItems(animate: boolean): void {
         const visibleCount = this.VisibleCount;
 
