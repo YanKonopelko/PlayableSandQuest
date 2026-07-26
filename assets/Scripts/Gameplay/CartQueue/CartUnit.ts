@@ -19,6 +19,7 @@ import {
 } from 'cc';
 import { CustomActionWithParam } from '../../Utills/CustomActions';
 import { ItemStackView } from '../Items/ItemStackView';
+import { PlayerAnimationController } from '../Player/PlayerAnimationController';
 
 const { ccclass, property } = _decorator;
 
@@ -77,6 +78,7 @@ export class CartUnit extends Component {
     private rageFrames: SpriteFrame[] = [];
     private sceneCamera: Camera | null = null;
     private readonly cartBaseScale: Vec3 = new Vec3(1, 1, 1);
+    private orcAnimation: PlayerAnimationController | null = null;
 
     public get Gold(): number {
         return this.gold;
@@ -93,6 +95,7 @@ export class CartUnit extends Component {
         if (!this.orcVisual) {
             this.orcVisual = this.node.getChildByName('Orc');
         }
+        this.orcAnimation = this.orcVisual?.getComponent(PlayerAnimationController) ?? null;
 
         this.cartVisual?.getScale(this.cartBaseScale);
         this.CreateRageIndicator();
@@ -143,6 +146,7 @@ export class CartUnit extends Component {
         this.SetWaiting(false);
         this.gold = 0;
         this.moving = false;
+        this.orcAnimation?.SetMoving(false);
         this.fillStack?.SetCount(0, false);
     }
 
@@ -189,6 +193,7 @@ export class CartUnit extends Component {
         }
 
         this.moving = true;
+        this.orcAnimation?.SetMoving(true);
         this.MoveToPoint(points, 0);
     }
 
@@ -198,8 +203,10 @@ export class CartUnit extends Component {
         }
 
         this.moving = true;
+        this.orcAnimation?.SetMoving(true);
         this.TweenTo(target.worldPosition.clone(), () => {
             this.moving = false;
+            this.orcAnimation?.SetMoving(false);
             onComplete?.();
         });
         return true;
@@ -208,6 +215,7 @@ export class CartUnit extends Component {
     private MoveToPoint(points: Node[], index: number): void {
         if (index >= points.length) {
             this.moving = false;
+            this.orcAnimation?.SetMoving(false);
             this.onRouteFinished.Invoke(this);
             return;
         }

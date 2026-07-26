@@ -168,7 +168,7 @@
             "_value": true
           },
           "marionette": {
-            "_value": false
+            "_value": true
           },
           "procedural-animation": {
             "_value": false
@@ -210,6 +210,7 @@
           "graphics",
           "intersection-2d",
           "light-probe",
+          "marionette",
           "mask",
           "meshopt",
           "occlusion-query",

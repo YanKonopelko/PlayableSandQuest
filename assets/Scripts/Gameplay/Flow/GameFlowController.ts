@@ -417,7 +417,12 @@ export class GameFlowController extends Component {
             arrived++;
 
             if (arrived >= transferred) {
-                this.GiveMoneyAfterExchange(transferred);
+                if (activeCart?.IsFilled) {
+                    this.GiveMoneyForFilledCart(activeCart.requiredGold);
+                } else {
+                    this.exchangeInProgress = false;
+                    this.ContinueExchangeOrLeave();
+                }
             }
         };
 
@@ -450,7 +455,7 @@ export class GameFlowController extends Component {
         }
     }
 
-    private GiveMoneyAfterExchange(amount: number): void {
+    private GiveMoneyForFilledCart(amount: number): void {
         const storageTarget = this.moneyStorage?.receivePivot ?? this.moneyStorage?.node;
         const start = this.moneyFlyStart?.worldPosition ?? storageTarget?.worldPosition ?? new Vec3();
         let completed = 0;
@@ -480,7 +485,8 @@ export class GameFlowController extends Component {
             return;
         }
 
-        this.SetState(EGameFlowState.GoToStorage);
+        const hasMoneyToCollect = (this.moneyStorage?.Amount ?? 0) > 0;
+        this.SetState(hasMoneyToCollect ? EGameFlowState.GoToStorage : EGameFlowState.GoToSand);
     }
 
     private OnActiveCartReady(_cart: CartUnit): void {
