@@ -68,6 +68,10 @@ export class HintController extends Component {
     }
 
     public Show(target: HintTarget | null): void {
+        if (this.currentTarget === target) {
+            return;
+        }
+
         this.currentTarget = target;
         const visible = !!target;
 

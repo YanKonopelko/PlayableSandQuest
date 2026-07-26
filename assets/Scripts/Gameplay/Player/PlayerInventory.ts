@@ -1,4 +1,5 @@
 import { _decorator, Camera, Component, director, Node } from 'cc';
+import { CustomActionWithParam } from '../../Utills/CustomActions';
 import { EItemType } from '../Items/ItemType';
 import { ItemStackView } from '../Items/ItemStackView';
 
@@ -19,6 +20,8 @@ export class PlayerInventory extends Component {
 
     @property(Node)
     public maxGoldIndicator: Node | null = null;
+
+    public readonly onAmountChanged: CustomActionWithParam<EItemType> = new CustomActionWithParam<EItemType>();
 
     private readonly counts: number[] = [0, 0, 0];
     private readonly reservedCounts: number[] = [0, 0, 0];
@@ -42,6 +45,7 @@ export class PlayerInventory extends Component {
 
         this.counts[itemType] = this.GetCount(itemType) + acceptedAmount;
         this.RefreshStackViews(itemType);
+        this.onAmountChanged.Invoke(itemType);
         return acceptedAmount;
     }
 
@@ -79,6 +83,7 @@ export class PlayerInventory extends Component {
 
         this.counts[itemType] -= Math.max(0, amount);
         this.RefreshStackViews(itemType);
+        this.onAmountChanged.Invoke(itemType);
         return true;
     }
 
@@ -86,6 +91,7 @@ export class PlayerInventory extends Component {
         this.counts[itemType] = 0;
         this.reservedCounts[itemType] = 0;
         this.RefreshStackViews(itemType);
+        this.onAmountChanged.Invoke(itemType);
     }
 
     protected start(): void {
@@ -107,7 +113,7 @@ export class PlayerInventory extends Component {
         }
     }
 
-    private GetStackView(itemType: EItemType): ItemStackView | null {
+    public GetStackView(itemType: EItemType): ItemStackView | null {
         const configuredStack = this.itemStacks[itemType];
         if (configuredStack) {
             return configuredStack;

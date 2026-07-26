@@ -225,7 +225,9 @@ export class GameFlowController extends Component {
         this.exchangeInteractor?.onPlayerEnter.Subscribe(this.OnExchangeEnter, this);
         this.exchangeInteractor?.onPlayerExit.Subscribe(this.OnExchangeExit, this);
         this.cartQueue?.onActiveCartReady.Subscribe(this.OnActiveCartReady, this);
+        this.inventory?.onAmountChanged.Subscribe(this.OnInventoryAmountChanged, this);
         this.moneyStorage?.onPlayerEnter.Subscribe(this.OnStorageEnter, this);
+        this.moneyStorage?.onAmountChanged.Subscribe(this.OnStorageAmountChanged, this);
         this.upgradeShop?.onPlayerEnter.Subscribe(this.OnUpgradeShopEnter, this);
         this.upgradeShop?.onPlayerExit.Subscribe(this.OnUpgradeShopExit, this);
         this.upgradeShop?.onPurchased.Subscribe(this.OnUpgradePurchased, this);
@@ -236,25 +238,6 @@ export class GameFlowController extends Component {
         this.debugState = state;
 
         switch (state) {
-            case EGameFlowState.GoToSand:
-                this.hints?.Show(this.sandHint);
-                break;
-            case EGameFlowState.CollectGold:
-                this.hints?.Hide();
-                break;
-            case EGameFlowState.GoToExchange:
-                this.hints?.Show(this.exchangeHint);
-                break;
-            case EGameFlowState.GoToStorage:
-                this.hints?.Show(this.storageHint);
-                break;
-            case EGameFlowState.GoToUpgradeShop:
-                if (this.inventory?.Has(EItemType.Money, 1)) {
-                    this.hints?.Show(this.upgradeShopHint);
-                } else {
-                    this.hints?.Show(this.storageHint);
-                }
-                break;
             case EGameFlowState.AwaitFinalTap:
                 this.hints?.Hide();
                 this.player?.SetMovementEnabled(false);
@@ -263,10 +246,63 @@ export class GameFlowController extends Component {
                 break;
             case EGameFlowState.Packshot:
                 this.hints?.Hide();
-                this.StopAutoConveyor();
                 this.packshot?.Show();
                 break;
+            default:
+                this.RefreshPriorityHint();
+                break;
         }
+    }
+
+    private RefreshPriorityHint(): void {
+        if (!this.hints) {
+            return;
+        }
+
+        if (this.state === EGameFlowState.AwaitFinalTap || this.state === EGameFlowState.Packshot) {
+            this.hints.Hide();
+            return;
+        }
+
+        const candidates: Array<{ target: HintTarget | null; available: boolean }> = [
+            { target: this.sandHint, available: true },
+            {
+                target: this.exchangeHint,
+                available: this.CanFillActiveCartFromInventory(),
+            },
+            {
+                target: this.storageHint,
+                available: (this.moneyStorage?.Amount ?? 0) > 0,
+            },
+            {
+                target: this.upgradeShopHint,
+                available: (this.inventory?.GetCount(EItemType.Money) ?? 0) > 0,
+            },
+        ];
+
+        let highestPriorityTarget: HintTarget | null = null;
+        for (const candidate of candidates) {
+            if (
+                candidate.available &&
+                candidate.target &&
+                (!highestPriorityTarget || candidate.target.priority > highestPriorityTarget.priority)
+            ) {
+                highestPriorityTarget = candidate.target;
+            }
+        }
+
+        this.hints.Show(highestPriorityTarget);
+    }
+
+    private CanFillActiveCartFromInventory(): boolean {
+        const activeCart = this.cartQueue?.ActiveCart;
+        if (!activeCart) {
+            return false;
+        }
+
+        const remainingGold = Math.max(0, activeCart.requiredGold - activeCart.Gold);
+        const inventoryGold = this.inventory?.GetCount(EItemType.GoldOre) ?? 0;
+        return remainingGold > 0 && inventoryGold >= remainingGold;
     }
 
     private OnSandEnter(): void {
@@ -448,6 +484,8 @@ export class GameFlowController extends Component {
     }
 
     private OnActiveCartReady(_cart: CartUnit): void {
+        this.RefreshPriorityHint();
+
         if (this.exchangeInteractor?.IsPlayerInside) {
             this.TryStartExchange();
         }
@@ -474,6 +512,18 @@ export class GameFlowController extends Component {
         this.SetState(EGameFlowState.GoToUpgradeShop);
     }
 
+    private OnStorageAmountChanged(amount: number): void {
+        if (amount > 0 && this.moneyStorage?.IsPlayerInside) {
+            this.OnStorageEnter();
+        }
+
+        this.RefreshPriorityHint();
+    }
+
+    private OnInventoryAmountChanged(_itemType: EItemType): void {
+        this.RefreshPriorityHint();
+    }
+
     private OnUpgradeShopEnter(): void {
         if (!this.upgradeShop || !this.inventory) {
             return;
@@ -493,15 +543,25 @@ export class GameFlowController extends Component {
             this.shopItemInFlight ||
             !shop?.IsPlayerInside ||
             !inventory ||
-            !shop.CanInteract(inventory) ||
-            !inventory.TryRemove(shop.priceItem, 1)
+            !shop.CanInteract(inventory)
         ) {
+            return;
+        }
+
+        const paymentStack = inventory.GetStackView(shop.priceItem);
+        const fallbackStart = this.playerItemFlyStart?.worldPosition
+            ?? this.player?.node.worldPosition
+            ?? new Vec3();
+        const start = paymentStack && paymentStack.VisibleCount > 0
+            ? paymentStack.GetItemWorldPosition(paymentStack.VisibleCount - 1)
+            : fallbackStart.clone();
+
+        if (!inventory.TryRemove(shop.priceItem, 1)) {
             return;
         }
 
         this.shopItemInFlight = true;
         const target = shop.receivePivot ?? shop.node;
-        const start = this.playerItemFlyStart?.worldPosition ?? this.player?.node.worldPosition ?? new Vec3();
 
         const onItemArrived = () => {
             const completesPurchase = shop.Remaining <= 1;
