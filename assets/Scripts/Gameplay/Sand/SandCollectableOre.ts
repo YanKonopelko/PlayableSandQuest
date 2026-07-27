@@ -52,9 +52,8 @@ export class SandCollectableOre extends Component {
 
         const orePosition = this.node.worldPosition;
         const dx = orePosition.x - worldPosition.x;
-        const dy = orePosition.y - worldPosition.y;
         const dz = orePosition.z - worldPosition.z;
-        if (dx * dx + dy * dy + dz * dz > this.collectRadius * this.collectRadius) {
+        if (dx * dx + dz * dz > this.collectRadius * this.collectRadius) {
             return false;
         }
 
