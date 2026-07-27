@@ -31,10 +31,16 @@ export class VacuumSystem extends Component {
     public tubePartsRoot: Node | null = null;
 
     @property(Material)
-    public normalTubeMaterial: Material | null = null;
+    public normalHeadMaterial: Material | null = null;
 
     @property(Material)
-    public warningTubeMaterial: Material | null = null;
+    public warningHeadMaterial: Material | null = null;
+
+    @property(Material)
+    public normalHoseMaterial: Material | null = null;
+
+    @property(Material)
+    public warningHoseMaterial: Material | null = null;
 
     @property(Node)
     public windRoot: Node | null = null;
@@ -108,6 +114,7 @@ export class VacuumSystem extends Component {
         RequiredReference.CheckNode(this, this.playerFacingRoot, 'playerFacingRoot');
         RequiredReference.Check(this, this.tubePartPrefab, 'tubePartPrefab');
         RequiredReference.CheckNode(this, this.tubePartsRoot, 'tubePartsRoot');
+        this.ApplyVacuumMaterials(false);
         this.SnapHeadHome();
         this.SetVisualActive(false);
     }
@@ -530,7 +537,10 @@ export class VacuumSystem extends Component {
             const part = instantiate(this.tubePartPrefab);
             this.tubePartsRoot.addChild(part);
             this.tubeParts.push(part);
-            this.ApplyMaterial(part, this.warning && this.warningBlinkState ? this.warningTubeMaterial : this.normalTubeMaterial);
+            this.ApplyMaterial(
+                part,
+                this.warning && this.warningBlinkState ? this.warningHoseMaterial : this.normalHoseMaterial,
+            );
         }
 
         for (let i = 0; i < this.tubeParts.length; i++) {
@@ -547,7 +557,7 @@ export class VacuumSystem extends Component {
         this.warning = value;
         this.warningTimer = 0;
         this.warningBlinkState = false;
-        this.ApplyTubeMaterial(this.normalTubeMaterial);
+        this.ApplyVacuumMaterials(false);
     }
 
     private UpdateWarningBlink(dt: number): void {
@@ -562,15 +572,18 @@ export class VacuumSystem extends Component {
 
         this.warningTimer = 0;
         this.warningBlinkState = !this.warningBlinkState;
-        this.ApplyTubeMaterial(this.warningBlinkState ? this.warningTubeMaterial : this.normalTubeMaterial);
+        this.ApplyVacuumMaterials(this.warningBlinkState);
     }
 
-    private ApplyTubeMaterial(material: Material | null): void {
+    private ApplyVacuumMaterials(useWarningMaterials: boolean): void {
+        const hoseMaterial = useWarningMaterials ? this.warningHoseMaterial : this.normalHoseMaterial;
         for (const part of this.tubeParts) {
-            this.ApplyMaterial(part, material);
+            this.ApplyMaterial(part, hoseMaterial);
         }
+
         if (this.tubeHead) {
-            this.ApplyMaterial(this.tubeHead, material);
+            const headMaterial = useWarningMaterials ? this.warningHeadMaterial : this.normalHeadMaterial;
+            this.ApplyMaterial(this.tubeHead, headMaterial);
         }
     }
 

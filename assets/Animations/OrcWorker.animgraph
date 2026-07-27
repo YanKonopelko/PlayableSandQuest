@@ -534,7 +534,7 @@
     },
     "duration": 0.3,
     "relativeDuration": false,
-    "exitConditionEnabled": true,
+    "exitConditionEnabled": false,
     "_exitCondition": 1
   },
   {
@@ -596,7 +596,7 @@
     },
     "duration": 0.3,
     "relativeDuration": false,
-    "exitConditionEnabled": true,
+    "exitConditionEnabled": false,
     "_exitCondition": 1
   },
   {
