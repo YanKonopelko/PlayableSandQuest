@@ -142,6 +142,7 @@ export class GameFlowController extends Component {
     private state: EGameFlowState = EGameFlowState.GoToSand;
     private finalTapArmed: boolean = false;
     private exchangeInProgress: boolean = false;
+    private storageTransferInProgress: boolean = false;
     private shopItemInFlight: boolean = false;
     private exitingSandAutomatically: boolean = false;
     private conveyorRunning: boolean = false;
@@ -504,7 +505,7 @@ export class GameFlowController extends Component {
     }
 
     private OnStorageEnter(): void {
-        if (!this.moneyStorage || !this.inventory) {
+        if (!this.moneyStorage || !this.inventory || this.storageTransferInProgress) {
             return;
         }
 
@@ -513,8 +514,68 @@ export class GameFlowController extends Component {
             return;
         }
 
-        this.moneyStorage.TryTake(amount);
-        this.inventory.Add(EItemType.Money, amount);
+        const storageStack = this.moneyStorage.stackView;
+        const fallbackStart = this.moneyStorage.receivePivot?.worldPosition
+            ?? storageStack?.root?.worldPosition
+            ?? this.moneyStorage.node.worldPosition;
+        const visibleMoneyCount = storageStack?.VisibleCount ?? 0;
+        const startPositions: Vec3[] = [];
+
+        for (let i = 0; i < amount; i++) {
+            const stackIndex = Math.max(0, visibleMoneyCount - 1 - i);
+            startPositions.push(
+                storageStack?.GetItemWorldPosition(stackIndex) ?? fallbackStart.clone(),
+            );
+        }
+
+        if (!this.moneyStorage.TryTake(amount)) {
+            return;
+        }
+
+        this.storageTransferInProgress = true;
+        const initialMoneyCount = this.inventory.GetCount(EItemType.Money);
+        const moneyStack = this.inventory.GetStackView(EItemType.Money);
+        const fallbackTarget = moneyStack?.root
+            ?? this.playerItemFlyStart
+            ?? this.player?.node
+            ?? null;
+        let completed = 0;
+
+        for (let i = 0; i < amount; i++) {
+            const itemTarget = moneyStack?.CreateItemTarget(initialMoneyCount + i);
+            const target = itemTarget ?? fallbackTarget;
+            const onMoneyArrived = () => {
+                if (itemTarget?.isValid) {
+                    itemTarget.destroy();
+                }
+                this.inventory?.Add(EItemType.Money, 1);
+                completed++;
+
+                if (completed >= amount) {
+                    this.storageTransferInProgress = false;
+                    if (this.moneyStorage?.IsPlayerInside && this.moneyStorage.Amount > 0) {
+                        this.OnStorageEnter();
+                    }
+                }
+            };
+
+            const flyingItem = this.flyService && this.moneyFlyPrefab && target
+                ? this.flyService.FlyPrefabToNode(
+                    this.moneyFlyPrefab,
+                    startPositions[i] ?? fallbackStart.clone(),
+                    target,
+                    onMoneyArrived,
+                    0.35 + i * 0.03,
+                    1.2,
+                    !!itemTarget,
+                )
+                : null;
+
+            if (!flyingItem) {
+                this.scheduleOnce(onMoneyArrived, 0.03 * i);
+            }
+        }
+
         this.SetState(EGameFlowState.GoToUpgradeShop);
     }
 
@@ -582,7 +643,7 @@ export class GameFlowController extends Component {
         };
 
         const flyingItem = this.flyService && this.moneyFlyPrefab
-            ? this.flyService.FlyPrefabToNode(this.moneyFlyPrefab, start.clone(), target, onItemArrived)
+            ? this.flyService.FlyPrefabToNode(this.moneyFlyPrefab, start.clone(), target, onItemArrived,0.15)
             : null;
 
         if (!flyingItem) {
