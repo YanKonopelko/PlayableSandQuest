@@ -8,7 +8,8 @@ const { ccclass, property } = _decorator;
 export class VacuumSystem extends Component {
     @property(Node)
     public tubeHead: Node | null = null;
-
+  @property(Node)
+    public tubePartsRootHead: Node | null = null;
     @property(Node)
     public machinePivot: Node | null = null;
 
@@ -57,7 +58,7 @@ export class VacuumSystem extends Component {
     @property({ type: CCFloat, min: 0.1, tooltip: 'How far behind the player the hose is routed.' })
     public hoseBehindDistance: number = 0.9;
 
-    @property({ type: CCFloat, min: 0.05, tooltip: 'Radius used to round hose route corners.' })
+    @property({ type: CCFloat, min: 0.05, tooltip: 'Minimum control distance used to keep the hose curve broad.' })
     public hoseCornerRadius: number = 0.35;
 
     @property({ type: CCFloat })
@@ -86,12 +87,21 @@ export class VacuumSystem extends Component {
     private returningHome: boolean = false;
     private headTransitionVersion: number = 0;
     private hoseSideSign: number = 1;
-    private readonly routeControlPoints: Vec3[] = Array.from({ length: 32 }, () => new Vec3());
+    private readonly routeControlPoints: Vec3[] = Array.from({ length: 4 }, () => new Vec3());
     private readonly routePoints: Vec3[] = Array.from({ length: 512 }, () => new Vec3());
+    private readonly routeTangents: Vec3[] = Array.from({ length: 512 }, () => new Vec3());
     private readonly routeSegmentLengths: number[] = new Array<number>(511).fill(0);
     private readonly playerForward: Vec3 = new Vec3(0, 0, 1);
     private readonly playerRight: Vec3 = new Vec3(1, 0, 0);
-    private readonly flatDirection: Vec3 = new Vec3();
+    private readonly curvePosition: Vec3 = new Vec3();
+    private readonly curveTangent: Vec3 = new Vec3();
+    private readonly tangentRoute = {
+        x: 0,
+        z: 0,
+        angle: 0,
+        angleDelta: 0,
+        directionSign: 1,
+    };
 
     public get IsActive(): boolean {
         return this.active;
@@ -259,12 +269,12 @@ export class VacuumSystem extends Component {
     }
 
     private RebuildTube(): void {
-        if (!this.machinePivot || !this.tubeHead) {
+        if (!this.machinePivot || !this.tubePartsRootHead) {
             return;
         }
 
         const start = this.machinePivot.worldPosition;
-        const end = this.tubeHead.worldPosition;
+        const end = this.tubePartsRootHead.worldPosition;
         const pointCount = this.BuildTubeRoute(start, end);
         let routeLength = 0;
         for (let i = 0; i < pointCount - 1; i++) {
@@ -290,28 +300,34 @@ export class VacuumSystem extends Component {
             const segmentEnd = this.routePoints[segmentIndex + 1];
             const segmentLength = Math.max(0.0001, this.routeSegmentLengths[segmentIndex]);
             const segmentT = Math.min(1, distanceAlongRoute / segmentLength);
-            Vec3.lerp(this.flatDirection, segmentStart, segmentEnd, segmentT);
-            this.flatDirection.y += Math.sin(t * Math.PI) * this.bendAmplitude;
-            part.setWorldPosition(this.flatDirection);
+            Vec3.lerp(this.curvePosition, segmentStart, segmentEnd, segmentT);
+            this.curvePosition.y += Math.sin(t * Math.PI) * this.bendAmplitude;
+            part.setWorldPosition(this.curvePosition);
 
-            const directionX = segmentEnd.x - segmentStart.x;
-            const directionZ = segmentEnd.z - segmentStart.z;
-            if (directionX * directionX + directionZ * directionZ > 0.001) {
-                part.setRotationFromEuler(0, Math.atan2(directionX, directionZ) * 180 / Math.PI, 0);
+            Vec3.lerp(
+                this.curveTangent,
+                this.routeTangents[segmentIndex],
+                this.routeTangents[segmentIndex + 1],
+                segmentT,
+            );
+            if (this.curveTangent.x * this.curveTangent.x + this.curveTangent.z * this.curveTangent.z > 0.001) {
+                part.setRotationFromEuler(
+                    0,
+                    Math.atan2(this.curveTangent.x, this.curveTangent.z) * 180 / Math.PI,
+                    0,
+                );
             }
         }
     }
 
     private BuildTubeRoute(start: Readonly<Vec3>, end: Readonly<Vec3>): number {
-        this.routeControlPoints[0].set(start);
-
         if (!this.playerFacingRoot) {
-            this.routeControlPoints[1].set(end);
-            return this.RoundRouteCorners(2);
+            return this.BuildDirectTubeRoute(start, end);
         }
 
-        const playerPosition = this.playerFacingRoot.worldPosition;
-        Vec3.transformQuat(this.playerForward, Vec3.UNIT_Z, this.playerFacingRoot.worldRotation);
+        const playerRoot = this.playerFacingRoot;
+        const playerPosition = playerRoot.worldPosition;
+        Vec3.transformQuat(this.playerForward, Vec3.UNIT_Z, playerRoot.worldRotation);
         this.playerForward.y = 0;
         if (this.playerForward.lengthSqr() <= 0.0001) {
             this.playerForward.set(0, 0, 1);
@@ -320,83 +336,150 @@ export class VacuumSystem extends Component {
         }
         this.playerRight.set(this.playerForward.z, 0, -this.playerForward.x);
 
+        const clearance = Math.max(0.1, this.playerHoseClearance);
         const endSide = (end.x - playerPosition.x) * this.playerRight.x
             + (end.z - playerPosition.z) * this.playerRight.z;
-        if (Math.abs(endSide) > 0.002) {
+        if (Math.abs(endSide) > clearance * 0.1) {
             this.hoseSideSign = endSide < 0 ? -1 : 1;
         }
 
-        const clearance = Math.max(0.1, this.playerHoseClearance);
         const behindDistance = Math.max(0.1, this.hoseBehindDistance);
-        const routeRadius = Math.max(clearance, behindDistance);
-        const approachAngle = Math.atan2(this.hoseSideSign * clearance, -clearance * 0.15);
-        const approachForward = Math.cos(approachAngle) * routeRadius;
-        const approachRight = Math.sin(approachAngle) * routeRadius;
-        const approachX = playerPosition.x
-            + this.playerForward.x * approachForward
-            + this.playerRight.x * approachRight;
-        const approachZ = playerPosition.z
-            + this.playerForward.z * approachForward
-            + this.playerRight.z * approachRight;
-        const startX = start.x - playerPosition.x;
-        const startZ = start.z - playerPosition.z;
-        const startDistanceSqr = startX * startX + startZ * startZ;
-        const routeRadiusSqr = routeRadius * routeRadius;
-        let pointCount = 1;
-        let tangentAngle = approachAngle;
-
-        if (startDistanceSqr >= clearance * clearance
-            && this.GetSegmentDistanceSqrXZ(start, approachX, approachZ, playerPosition) >= clearance * clearance
-            && this.IsDirectRouteTurnSmooth(start, approachX, approachZ, end)) {
-            this.routeControlPoints[pointCount++].set(approachX, playerPosition.y, approachZ);
-            this.routeControlPoints[pointCount++].set(end);
-            return this.RoundRouteCorners(pointCount);
-        }
-
-        if (startDistanceSqr > routeRadiusSqr + 0.0001) {
-            const baseScale = routeRadiusSqr / startDistanceSqr;
-            const tangentScale = routeRadius * Math.sqrt(startDistanceSqr - routeRadiusSqr) / startDistanceSqr;
-            const tangent1X = startX * baseScale - startZ * tangentScale;
-            const tangent1Z = startZ * baseScale + startX * tangentScale;
-            const tangent2X = startX * baseScale + startZ * tangentScale;
-            const tangent2Z = startZ * baseScale - startX * tangentScale;
-            const tangent1Angle = this.GetPlayerLocalAngle(tangent1X, tangent1Z);
-            const tangent2Angle = this.GetPlayerLocalAngle(tangent2X, tangent2Z);
-            const tangent1Delta = this.GetShortestAngleDelta(tangent1Angle, approachAngle);
-            const tangent2Delta = this.GetShortestAngleDelta(tangent2Angle, approachAngle);
-            const useFirstTangent = Math.abs(tangent1Delta) <= Math.abs(tangent2Delta);
-            const tangentX = useFirstTangent ? tangent1X : tangent2X;
-            const tangentZ = useFirstTangent ? tangent1Z : tangent2Z;
-            tangentAngle = useFirstTangent ? tangent1Angle : tangent2Angle;
-            this.routeControlPoints[pointCount++].set(
-                playerPosition.x + tangentX,
-                playerPosition.y,
-                playerPosition.z + tangentZ,
-            );
-        } else if (startDistanceSqr > 0.0001) {
-            const startDistance = Math.sqrt(startDistanceSqr);
-            tangentAngle = this.GetPlayerLocalAngle(startX, startZ);
-            this.routeControlPoints[pointCount++].set(
-                playerPosition.x + startX / startDistance * routeRadius,
-                playerPosition.y,
-                playerPosition.z + startZ / startDistance * routeRadius,
+        let approachDirectionX = end.x - playerPosition.x;
+        let approachDirectionZ = end.z - playerPosition.z;
+        let approachDirectionLength = Math.sqrt(
+            approachDirectionX * approachDirectionX + approachDirectionZ * approachDirectionZ,
+        );
+        if (approachDirectionLength <= 0.05) {
+            approachDirectionX = this.playerRight.x * this.hoseSideSign - this.playerForward.x * 0.35;
+            approachDirectionZ = this.playerRight.z * this.hoseSideSign - this.playerForward.z * 0.35;
+            approachDirectionLength = Math.sqrt(
+                approachDirectionX * approachDirectionX + approachDirectionZ * approachDirectionZ,
             );
         }
+        approachDirectionX /= approachDirectionLength;
+        approachDirectionZ /= approachDirectionLength;
 
-        const approachRouteAngle = tangentAngle + this.GetShortestAngleDelta(tangentAngle, approachAngle);
-        pointCount = this.AppendRouteArc(pointCount, tangentAngle, approachRouteAngle, routeRadius, playerPosition);
-        this.routeControlPoints[pointCount++].set(end);
-        return this.RoundRouteCorners(pointCount);
+        const endDistanceFromPlayer = Math.sqrt(
+            (end.x - playerPosition.x) * (end.x - playerPosition.x)
+                + (end.z - playerPosition.z) * (end.z - playerPosition.z),
+        );
+        const avoidanceRadius = Math.max(
+            clearance,
+            behindDistance,
+            endDistanceFromPlayer + Math.max(0.05, this.hoseCornerRadius),
+        );
+        const approachX = playerPosition.x + approachDirectionX * avoidanceRadius;
+        const approachZ = playerPosition.z + approachDirectionZ * avoidanceRadius;
+        const startOffsetX = start.x - playerPosition.x;
+        const startOffsetZ = start.z - playerPosition.z;
+        const startDistanceSqr = startOffsetX * startOffsetX + startOffsetZ * startOffsetZ;
+        const sampleSpacing = this.GetTubeRouteSampleSpacing();
+        let pointCount = 0;
+        let incomingTangentX = approachX - start.x;
+        let incomingTangentZ = approachZ - start.z;
+
+        if (startDistanceSqr > avoidanceRadius * avoidanceRadius + 0.0001
+            && this.GetSegmentDistanceSqrXZ(start, approachX, approachZ, playerPosition)
+                < avoidanceRadius * avoidanceRadius - 0.0001) {
+            const tangentRoute = this.GetShortestTangentRoute(
+                start,
+                playerPosition,
+                approachDirectionX,
+                approachDirectionZ,
+                avoidanceRadius,
+            );
+            pointCount = this.AppendTubeLine(
+                pointCount,
+                start.x,
+                start.z,
+                tangentRoute.x,
+                tangentRoute.z,
+                sampleSpacing,
+            );
+            pointCount = this.AppendTubeArc(
+                pointCount,
+                playerPosition.x,
+                playerPosition.z,
+                avoidanceRadius,
+                tangentRoute.angle,
+                tangentRoute.angleDelta,
+                sampleSpacing,
+            );
+            const approachAngle = tangentRoute.angle + tangentRoute.angleDelta;
+            incomingTangentX = -Math.sin(approachAngle) * tangentRoute.directionSign;
+            incomingTangentZ = Math.cos(approachAngle) * tangentRoute.directionSign;
+        } else {
+            pointCount = this.AppendTubeLine(
+                pointCount,
+                start.x,
+                start.z,
+                approachX,
+                approachZ,
+                sampleSpacing,
+            );
+        }
+
+        const incomingTangentLength = Math.sqrt(
+            incomingTangentX * incomingTangentX + incomingTangentZ * incomingTangentZ,
+        );
+        if (incomingTangentLength > 0.0001) {
+            incomingTangentX /= incomingTangentLength;
+            incomingTangentZ /= incomingTangentLength;
+        } else {
+            incomingTangentX = -approachDirectionZ * this.hoseSideSign;
+            incomingTangentZ = approachDirectionX * this.hoseSideSign;
+        }
+        pointCount = this.AppendTubeEntryCurve(
+            pointCount,
+            approachX,
+            approachZ,
+            end.x,
+            end.z,
+            incomingTangentX,
+            incomingTangentZ,
+            approachDirectionX,
+            approachDirectionZ,
+            sampleSpacing,
+        );
+        this.ApplyTubeRouteHeight(pointCount, start.y, end.y);
+        return pointCount;
     }
 
-    private GetPlayerLocalAngle(worldOffsetX: number, worldOffsetZ: number): number {
-        const forwardAmount = worldOffsetX * this.playerForward.x + worldOffsetZ * this.playerForward.z;
-        const rightAmount = worldOffsetX * this.playerRight.x + worldOffsetZ * this.playerRight.z;
-        return Math.atan2(rightAmount, forwardAmount);
+    private BuildDirectTubeRoute(start: Readonly<Vec3>, end: Readonly<Vec3>): number {
+        const startControl = this.routeControlPoints[0];
+        const firstControl = this.routeControlPoints[1];
+        const secondControl = this.routeControlPoints[2];
+        const endControl = this.routeControlPoints[3];
+        startControl.set(start.x, 0, start.z);
+        endControl.set(end.x, 0, end.z);
+        firstControl.set(
+            start.x + (end.x - start.x) / 3,
+            0,
+            start.z + (end.z - start.z) / 3,
+        );
+        secondControl.set(
+            end.x - (end.x - start.x) / 3,
+            0,
+            end.z - (end.z - start.z) / 3,
+        );
+        const routeLength = Math.sqrt(
+            (end.x - start.x) * (end.x - start.x) + (end.z - start.z) * (end.z - start.z),
+        );
+        const sampleStepCount = Math.max(1, Math.min(
+            this.routePoints.length - 1,
+            Math.ceil(routeLength / this.GetTubeRouteSampleSpacing()),
+        ));
+        for (let i = 0; i <= sampleStepCount; i++) {
+            const t = i / sampleStepCount;
+            this.EvaluateTubeBezier(t, this.routePoints[i]);
+            this.EvaluateTubeBezierTangent(t, this.routeTangents[i]);
+        }
+        this.ApplyTubeRouteHeight(sampleStepCount + 1, start.y, end.y);
+        return sampleStepCount + 1;
     }
 
-    private GetShortestAngleDelta(fromAngle: number, toAngle: number): number {
-        return (toAngle - fromAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+    private GetTubeRouteSampleSpacing(): number {
+        return Math.max(0.025, Math.min(0.1, this.segmentLength * 0.5));
     }
 
     private GetSegmentDistanceSqrXZ(
@@ -424,108 +507,205 @@ export class VacuumSystem extends Component {
         return pointX * pointX + pointZ * pointZ;
     }
 
-    private IsDirectRouteTurnSmooth(
+    private GetShortestTangentRoute(
         start: Readonly<Vec3>,
-        cornerX: number,
-        cornerZ: number,
-        end: Readonly<Vec3>,
-    ): boolean {
-        const incomingX = cornerX - start.x;
-        const incomingZ = cornerZ - start.z;
-        const outgoingX = end.x - cornerX;
-        const outgoingZ = end.z - cornerZ;
-        const incomingLength = Math.sqrt(incomingX * incomingX + incomingZ * incomingZ);
-        const outgoingLength = Math.sqrt(outgoingX * outgoingX + outgoingZ * outgoingZ);
-        if (incomingLength <= 0.0001 || outgoingLength <= 0.0001) {
-            return true;
+        center: Readonly<Vec3>,
+        approachDirectionX: number,
+        approachDirectionZ: number,
+        radius: number,
+    ): { x: number; z: number; angle: number; angleDelta: number; directionSign: number } {
+        const startX = start.x - center.x;
+        const startZ = start.z - center.z;
+        const startDistanceSqr = startX * startX + startZ * startZ;
+        const baseScale = radius * radius / startDistanceSqr;
+        const tangentScale = radius * Math.sqrt(startDistanceSqr - radius * radius) / startDistanceSqr;
+        const approachAngle = Math.atan2(approachDirectionZ, approachDirectionX);
+        let bestX = 0;
+        let bestZ = 0;
+        let bestAngle = 0;
+        let bestAngleDelta = 0;
+        let bestDirectionSign = 1;
+        let bestLength = Number.POSITIVE_INFINITY;
+        for (let tangentIndex = 0; tangentIndex < 2; tangentIndex++) {
+            const tangentSide = tangentIndex === 0 ? -1 : 1;
+            const tangentX = startX * baseScale - startZ * tangentScale * tangentSide;
+            const tangentZ = startZ * baseScale + startX * tangentScale * tangentSide;
+            const tangentAngle = Math.atan2(tangentZ, tangentX);
+            const derivativeX = -Math.sin(tangentAngle);
+            const derivativeZ = Math.cos(tangentAngle);
+            const incomingX = center.x + tangentX - start.x;
+            const incomingZ = center.z + tangentZ - start.z;
+            const directionSign = incomingX * derivativeX + incomingZ * derivativeZ >= 0 ? 1 : -1;
+            const rawAngleDelta = approachAngle - tangentAngle;
+            const angleDelta = directionSign > 0
+                ? (rawAngleDelta + Math.PI * 4) % (Math.PI * 2)
+                : -(-rawAngleDelta + Math.PI * 4) % (Math.PI * 2);
+            const routeLength = Math.sqrt(incomingX * incomingX + incomingZ * incomingZ)
+                + Math.abs(angleDelta) * radius;
+            if (routeLength < bestLength) {
+                bestLength = routeLength;
+                bestX = center.x + tangentX;
+                bestZ = center.z + tangentZ;
+                bestAngle = tangentAngle;
+                bestAngleDelta = angleDelta;
+                bestDirectionSign = directionSign;
+            }
         }
-
-        const directionDot = (incomingX * outgoingX + incomingZ * outgoingZ)
-            / (incomingLength * outgoingLength);
-        return directionDot >= Math.cos(Math.PI * 5 / 12);
+        this.tangentRoute.x = bestX;
+        this.tangentRoute.z = bestZ;
+        this.tangentRoute.angle = bestAngle;
+        this.tangentRoute.angleDelta = bestAngleDelta;
+        this.tangentRoute.directionSign = bestDirectionSign;
+        return this.tangentRoute;
     }
 
-    private AppendRouteArc(
+    private AppendTubeLine(
         pointCount: number,
-        fromAngle: number,
-        toAngle: number,
-        radius: number,
-        center: Readonly<Vec3>,
+        startX: number,
+        startZ: number,
+        endX: number,
+        endZ: number,
+        sampleSpacing: number,
     ): number {
-        const maxAngleStep = Math.PI / 12;
-        const stepCount = Math.max(1, Math.ceil(Math.abs(toAngle - fromAngle) / maxAngleStep));
-        for (let i = 1; i <= stepCount && pointCount < this.routeControlPoints.length - 1; i++) {
-            const angle = fromAngle + (toAngle - fromAngle) * i / stepCount;
-            const forwardAmount = Math.cos(angle) * radius;
-            const rightAmount = Math.sin(angle) * radius;
-            this.routeControlPoints[pointCount++].set(
-                center.x + this.playerForward.x * forwardAmount + this.playerRight.x * rightAmount,
-                center.y,
-                center.z + this.playerForward.z * forwardAmount + this.playerRight.z * rightAmount,
+        const directionX = endX - startX;
+        const directionZ = endZ - startZ;
+        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
+        const stepCount = Math.max(1, Math.ceil(length / sampleSpacing));
+        const firstStep = pointCount === 0 ? 0 : 1;
+        for (let step = firstStep; step <= stepCount && pointCount < this.routePoints.length; step++) {
+            const t = step / stepCount;
+            this.routePoints[pointCount].set(
+                startX + directionX * t,
+                0,
+                startZ + directionZ * t,
             );
+            this.routeTangents[pointCount].set(directionX, 0, directionZ);
+            pointCount++;
         }
         return pointCount;
     }
 
-    private RoundRouteCorners(controlPointCount: number): number {
-        if (controlPointCount <= 0) {
-            return 0;
+    private AppendTubeArc(
+        pointCount: number,
+        centerX: number,
+        centerZ: number,
+        radius: number,
+        startAngle: number,
+        angleDelta: number,
+        sampleSpacing: number,
+    ): number {
+        const stepCount = Math.max(1, Math.ceil(Math.abs(angleDelta) * radius / sampleSpacing));
+        const directionSign = angleDelta >= 0 ? 1 : -1;
+        for (let step = 1; step <= stepCount && pointCount < this.routePoints.length; step++) {
+            const angle = startAngle + angleDelta * step / stepCount;
+            this.routePoints[pointCount].set(
+                centerX + Math.cos(angle) * radius,
+                0,
+                centerZ + Math.sin(angle) * radius,
+            );
+            this.routeTangents[pointCount].set(
+                -Math.sin(angle) * directionSign,
+                0,
+                Math.cos(angle) * directionSign,
+            );
+            pointCount++;
         }
+        return pointCount;
+    }
 
-        let routePointCount = 0;
-        this.routePoints[routePointCount++].set(this.routeControlPoints[0]);
-        const cornerRadius = Math.max(0.05, this.hoseCornerRadius);
-        for (let i = 1; i < controlPointCount - 1 && routePointCount < this.routePoints.length - 14; i++) {
-            const previous = this.routeControlPoints[i - 1];
-            const corner = this.routeControlPoints[i];
-            const next = this.routeControlPoints[i + 1];
-            const incomingX = corner.x - previous.x;
-            const incomingY = corner.y - previous.y;
-            const incomingZ = corner.z - previous.z;
-            const outgoingX = next.x - corner.x;
-            const outgoingY = next.y - corner.y;
-            const outgoingZ = next.z - corner.z;
-            const incomingLength = Math.sqrt(
-                incomingX * incomingX + incomingY * incomingY + incomingZ * incomingZ,
-            );
-            const outgoingLength = Math.sqrt(
-                outgoingX * outgoingX + outgoingY * outgoingY + outgoingZ * outgoingZ,
-            );
-            if (incomingLength <= 0.0001 || outgoingLength <= 0.0001) {
-                continue;
-            }
-
-            const trimDistance = Math.min(cornerRadius, incomingLength * 0.45, outgoingLength * 0.45);
-            const entry = this.routePoints[routePointCount++];
-            entry.set(
-                corner.x - incomingX / incomingLength * trimDistance,
-                corner.y - incomingY / incomingLength * trimDistance,
-                corner.z - incomingZ / incomingLength * trimDistance,
-            );
-            const exitX = corner.x + outgoingX / outgoingLength * trimDistance;
-            const exitY = corner.y + outgoingY / outgoingLength * trimDistance;
-            const exitZ = corner.z + outgoingZ / outgoingLength * trimDistance;
-            const directionDot = Math.max(-1, Math.min(1,
-                (incomingX * outgoingX + incomingY * outgoingY + incomingZ * outgoingZ)
-                / (incomingLength * outgoingLength),
-            ));
-            const turnAngle = Math.acos(directionDot);
-            const curveStepCount = Math.max(3, Math.ceil(turnAngle / (Math.PI / 12)));
-            for (let step = 1; step <= curveStepCount; step++) {
-                const t = step / curveStepCount;
-                const oneMinusT = 1 - t;
-                const startWeight = oneMinusT * oneMinusT;
-                const cornerWeight = 2 * oneMinusT * t;
-                const endWeight = t * t;
-                this.routePoints[routePointCount++].set(
-                    entry.x * startWeight + corner.x * cornerWeight + exitX * endWeight,
-                    entry.y * startWeight + corner.y * cornerWeight + exitY * endWeight,
-                    entry.z * startWeight + corner.z * cornerWeight + exitZ * endWeight,
-                );
-            }
+    private AppendTubeEntryCurve(
+        pointCount: number,
+        startX: number,
+        startZ: number,
+        endX: number,
+        endZ: number,
+        incomingTangentX: number,
+        incomingTangentZ: number,
+        approachDirectionX: number,
+        approachDirectionZ: number,
+        sampleSpacing: number,
+    ): number {
+        const distance = Math.sqrt(
+            (endX - startX) * (endX - startX) + (endZ - startZ) * (endZ - startZ),
+        );
+        const controlDistance = Math.min(
+            distance * 0.4,
+            Math.max(Math.max(0.05, this.hoseCornerRadius), distance * 0.3),
+        );
+        this.routeControlPoints[0].set(startX, 0, startZ);
+        this.routeControlPoints[1].set(
+            startX + incomingTangentX * controlDistance,
+            0,
+            startZ + incomingTangentZ * controlDistance,
+        );
+        this.routeControlPoints[2].set(
+            endX + approachDirectionX * controlDistance,
+            0,
+            endZ + approachDirectionZ * controlDistance,
+        );
+        this.routeControlPoints[3].set(endX, 0, endZ);
+        const stepCount = Math.max(2, Math.ceil(distance * 1.5 / sampleSpacing));
+        for (let step = 1; step <= stepCount && pointCount < this.routePoints.length; step++) {
+            const t = step / stepCount;
+            this.EvaluateTubeBezier(t, this.routePoints[pointCount]);
+            this.EvaluateTubeBezierTangent(t, this.routeTangents[pointCount]);
+            pointCount++;
         }
-        this.routePoints[routePointCount++].set(this.routeControlPoints[controlPointCount - 1]);
-        return routePointCount;
+        return pointCount;
+    }
+
+    private ApplyTubeRouteHeight(pointCount: number, startY: number, endY: number): void {
+        let totalLength = 0;
+        for (let i = 0; i < pointCount - 1; i++) {
+            const dx = this.routePoints[i + 1].x - this.routePoints[i].x;
+            const dz = this.routePoints[i + 1].z - this.routePoints[i].z;
+            totalLength += Math.sqrt(dx * dx + dz * dz);
+        }
+        let distance = 0;
+        for (let i = 0; i < pointCount; i++) {
+            if (i > 0) {
+                const dx = this.routePoints[i].x - this.routePoints[i - 1].x;
+                const dz = this.routePoints[i].z - this.routePoints[i - 1].z;
+                distance += Math.sqrt(dx * dx + dz * dz);
+            }
+            this.routePoints[i].y = startY + (endY - startY) * distance / Math.max(0.0001, totalLength);
+        }
+    }
+
+    private EvaluateTubeBezier(t: number, out: Vec3): void {
+        const oneMinusT = 1 - t;
+        const startWeight = oneMinusT * oneMinusT * oneMinusT;
+        const firstWeight = 3 * oneMinusT * oneMinusT * t;
+        const secondWeight = 3 * oneMinusT * t * t;
+        const endWeight = t * t * t;
+        const start = this.routeControlPoints[0];
+        const first = this.routeControlPoints[1];
+        const second = this.routeControlPoints[2];
+        const end = this.routeControlPoints[3];
+        out.set(
+            start.x * startWeight + first.x * firstWeight + second.x * secondWeight + end.x * endWeight,
+            start.y * startWeight + first.y * firstWeight + second.y * secondWeight + end.y * endWeight,
+            start.z * startWeight + first.z * firstWeight + second.z * secondWeight + end.z * endWeight,
+        );
+    }
+
+    private EvaluateTubeBezierTangent(t: number, out: Vec3): void {
+        const oneMinusT = 1 - t;
+        const start = this.routeControlPoints[0];
+        const first = this.routeControlPoints[1];
+        const second = this.routeControlPoints[2];
+        const end = this.routeControlPoints[3];
+        out.set(
+            3 * oneMinusT * oneMinusT * (first.x - start.x)
+                + 6 * oneMinusT * t * (second.x - first.x)
+                + 3 * t * t * (end.x - second.x),
+            3 * oneMinusT * oneMinusT * (first.y - start.y)
+                + 6 * oneMinusT * t * (second.y - first.y)
+                + 3 * t * t * (end.y - second.y),
+            3 * oneMinusT * oneMinusT * (first.z - start.z)
+                + 6 * oneMinusT * t * (second.z - first.z)
+                + 3 * t * t * (end.z - second.z),
+        );
     }
 
     private EnsureSegmentCount(count: number): void {
