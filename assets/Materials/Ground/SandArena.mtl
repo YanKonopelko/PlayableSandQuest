@@ -16,34 +16,37 @@
     {
       "rasterizerState": {},
       "depthStencilState": {},
-      "blendState": {
-        "targets": [
-          {
-            "blendSrc": 6,
-            "blendDst": 7,
-            "blendDstAlpha": 7
-          }
-        ]
-      }
+      "blendState": {}
     }
   ],
   "_props": [
     {
+      "mainColor": {
+        "__type__": "cc.Color",
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
       "darkColor": {
         "__type__": "cc.Color",
-        "r": 188,
-        "g": 148,
-        "b": 93,
+        "r": 168,
+        "g": 140,
+        "b": 97,
         "a": 255
       },
       "lightColor": {
         "__type__": "cc.Color",
-        "r": 235,
-        "g": 202,
-        "b": 139,
+        "r": 222,
+        "g": 196,
+        "b": 156,
         "a": 255
       },
-      "brightness": 0.52
+      "brightness": 1,
+      "macroScale": 0.19,
+      "detailScale": 2,
+      "grainScale": 20,
+      "grainStrength": 0.15
     }
   ]
 }

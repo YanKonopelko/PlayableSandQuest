@@ -1,6 +1,6 @@
 CCEffect %{
   techniques:
-  - name: transparent
+  - name: opaque
     passes:
     - vert: legacy/main-functions/general-vs:vert
       frag: sand-arena-fs:frag
@@ -8,32 +8,16 @@ CCEffect %{
         cullMode: none
       depthStencilState:
         depthTest: true
-        depthWrite: false
-      blendState:
-        targets:
-        - blend: true
-          blendSrc: src_alpha
-          blendDst: one_minus_src_alpha
-          blendSrcAlpha: one
-          blendDstAlpha: one_minus_src_alpha
+        depthWrite: true
       properties:
-        mainColor:       { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
-        darkColor:       { value: [0.74, 0.58, 0.36, 1.0], editor: { type: color } }
-        lightColor:      { value: [0.92, 0.79, 0.55, 1.0], editor: { type: color } }
-        brightness:      { value: 1.03, editor: { range: [0.5, 1.5, 0.01], slide: true } }
-        macroScale:      { value: 0.14, editor: { range: [0.03, 0.5, 0.01], slide: true } }
-        detailScale:     { value: 1.15, editor: { range: [0.3, 4.0, 0.05], slide: true } }
-        grainScale:      { value: 5.5, editor: { range: [2.0, 20.0, 0.25], slide: true } }
-        grainStrength:   { value: 0.08, editor: { range: [0.0, 0.3, 0.01], slide: true } }
-        surfaceSize:     { value: 20.0, editor: { range: [1.0, 100.0, 0.5], slide: true, tooltip: "World-space width of the square plane." } }
-        circleRadius:    { value: 9.35, editor: { range: [0.1, 50.0, 0.05], slide: true, tooltip: "Arena radius in world units." } }
-        edgeRoughness:   { value: 0.65, editor: { range: [0.0, 2.0, 0.05], slide: true } }
-        edgeNoiseScale:  { value: 0.42, editor: { range: [0.05, 2.0, 0.01], slide: true } }
-        edgeFeather:     { value: 0.08, editor: { range: [0.0, 0.5, 0.01], slide: true } }
-        gapDepth:        { value: 1.15, editor: { range: [0.0, 4.0, 0.05], slide: true } }
-        gapScale:        { value: 1.3, editor: { range: [0.1, 5.0, 0.05], slide: true } }
-        gapThreshold:    { value: 0.72, editor: { range: [0.4, 0.95, 0.01], slide: true } }
-        gapStrength:     { value: 1.0, editor: { range: [0.0, 1.0, 0.01], slide: true } }
+        mainColor:     { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+        darkColor:     { value: [0.66, 0.55, 0.38, 1.0], editor: { type: color } }
+        lightColor:    { value: [0.87, 0.77, 0.61, 1.0], editor: { type: color } }
+        brightness:    { value: 1.0, editor: { range: [0.5, 1.5, 0.01], slide: true } }
+        macroScale:    { value: 0.19, editor: { range: [0.03, 0.5, 0.01], slide: true } }
+        detailScale:   { value: 2.0, editor: { range: [0.3, 4.0, 0.05], slide: true } }
+        grainScale:    { value: 20.0, editor: { range: [2.0, 20.0, 0.25], slide: true } }
+        grainStrength: { value: 0.15, editor: { range: [0.0, 0.3, 0.01], slide: true } }
 }%
 
 CCProgram sand-arena-fs %{
@@ -41,7 +25,6 @@ CCProgram sand-arena-fs %{
   #include <legacy/output>
   #include <legacy/fog-fs>
 
-  in vec2 v_uv;
   in vec3 v_position;
 
   uniform Constant {
@@ -53,15 +36,6 @@ CCProgram sand-arena-fs %{
     float detailScale;
     float grainScale;
     float grainStrength;
-    float surfaceSize;
-    float circleRadius;
-    float edgeRoughness;
-    float edgeNoiseScale;
-    float edgeFeather;
-    float gapDepth;
-    float gapScale;
-    float gapThreshold;
-    float gapStrength;
   };
 
   float sandHash (vec2 p) {
@@ -93,45 +67,34 @@ CCProgram sand-arena-fs %{
     return value / 0.875;
   }
 
-  vec4 frag () {
-    vec2 world = v_position.xz;
+  float sandStrokes (vec2 p) {
+    vec2 cell = floor(p);
+    vec2 local = fract(p) - 0.5;
+    float seed = sandHash(cell + vec2(31.7, 11.3));
+    float direction = step(0.5, sandHash(cell + vec2(4.1, 19.7))) * 2.0 - 1.0;
 
+    float strokeA = (1.0 - smoothstep(0.025, 0.065, abs(local.x + local.y * 0.34 * direction)))
+      * (1.0 - smoothstep(0.08, 0.30, abs(local.y)));
+    float strokeB = (1.0 - smoothstep(0.025, 0.065, abs(local.x - 0.12 - local.y * 0.28 * direction)))
+      * (1.0 - smoothstep(0.07, 0.23, abs(local.y + 0.04)));
+    return max(strokeA, strokeB) * smoothstep(0.72, 0.9, seed);
+  }
+
+  vec4 frag () {
+    // Match the grass material's world-space pattern so differently scaled
+    // arena meshes keep one continuous texture density.
+    vec2 world = v_position.xz;
     float macro = sandFbm(world * macroScale + vec2(8.317, 3.971));
     float detail = sandNoise(world * detailScale + vec2(21.7, -14.2));
     float grain = sandNoise(world * grainScale + vec2(-7.3, 12.9));
-    float sandTone = clamp(0.52 + (macro - 0.5) * 0.58 + (detail - 0.5) * 0.16, 0.0, 1.0);
-    vec3 sand = mix(darkColor.rgb, lightColor.rgb, sandTone);
+    float strokes = sandStrokes(world * grainScale * 0.55);
+
+    float tone = clamp(0.52 + (macro - 0.5) * 0.72 + (detail - 0.5) * 0.20, 0.0, 1.0);
+    vec3 sand = mix(darkColor.rgb, lightColor.rgb, tone);
     sand *= 1.0 + (grain - 0.5) * grainStrength;
+    sand = mix(sand, darkColor.rgb * 0.92, strokes * 0.28);
 
-    // v_uv defines the circle around the centre of each plane, while all edge
-    // noise is sampled in world space. Identical materials therefore produce
-    // different silhouettes when their nodes stand at different coordinates.
-    vec2 local = (v_uv - vec2(0.5)) * surfaceSize;
-    float distanceFromCentre = length(local);
-    float edgeNoise = sandFbm(world * edgeNoiseScale + vec2(37.91, -18.47));
-    float irregularRadius = max(0.0, circleRadius + (edgeNoise - 0.5) * edgeRoughness * 2.0);
-    float safeFeather = max(0.001, edgeFeather);
-    float circleAlpha = 1.0 - smoothstep(
-      irregularRadius - safeFeather,
-      irregularRadius + safeFeather,
-      distanceFromCentre
-    );
-
-    // Sparse high-frequency islands bite into the outer band and create fully
-    // transparent gaps instead of a mechanically perfect continuous rim.
-    float safeGapDepth = max(0.001, gapDepth);
-    float edgeBand = smoothstep(
-      circleRadius - safeGapDepth,
-      circleRadius - safeGapDepth * 0.12,
-      distanceFromCentre
-    );
-    float broadGap = sandFbm(world * gapScale + vec2(-51.7, 28.3));
-    float chipGap = sandNoise(world * gapScale * 2.37 + vec2(11.2, 73.4));
-    float gapNoise = max(broadGap, chipGap * 0.94);
-    float gapMask = smoothstep(gapThreshold, min(0.995, gapThreshold + 0.09), gapNoise) * edgeBand;
-    float alpha = circleAlpha * (1.0 - gapMask * gapStrength) * mainColor.a;
-
-    vec4 color = vec4(sand * mainColor.rgb * brightness, alpha);
+    vec4 color = vec4(sand * mainColor.rgb * brightness, 1.0);
     CC_APPLY_FOG(color, v_position);
     return CCFragOutput(color);
   }

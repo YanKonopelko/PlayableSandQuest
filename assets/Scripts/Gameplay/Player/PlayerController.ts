@@ -1,4 +1,4 @@
-import { _decorator, CapsuleCollider, CCFloat, Component, director, geometry, Node, PhysicsSystem, Vec2, Vec3 } from 'cc';
+import { _decorator, Camera, CapsuleCollider, CCFloat, Component, director, geometry, Node, PhysicsSystem, Vec2, Vec3 } from 'cc';
 import { AdaptiveCameraFollower } from '../Camera/AdaptiveCameraFollower';
 import { FloatingJoystick } from '../Input/FloatingJoystick';
 import { RequiredReference } from '../Core/RequiredReference';
@@ -31,6 +31,9 @@ export class PlayerController extends Component {
 
     @property(CapsuleCollider)
     public movementCollider: CapsuleCollider | null = null;
+
+    @property(Node)
+    public stopIndicator: Node | null = null;
 
     @property({ type: CCFloat })
     public moveSpeed: number = 4.5;
@@ -75,6 +78,7 @@ export class PlayerController extends Component {
     private readonly rayOrigin: Vec3 = new Vec3();
     private stepTimer: number = 0;
     private nextStepType: ESoundType = ESoundType.Step1;
+    private sceneCamera: Camera | null = null;
 
     protected onLoad(): void {
         RequiredReference.Check(this, this.joystick, 'joystick');
@@ -146,6 +150,27 @@ export class PlayerController extends Component {
         this.UpdateRotation(dt);
         this.animationController?.SetMoving(true);
         this.UpdateFootsteps(dt, true);
+    }
+
+    protected lateUpdate(): void {
+        if (!this.stopIndicator) {
+            return;
+        }
+
+        const showStop = this.vacuumSystem?.IsAtMaxLength ?? false;
+        this.stopIndicator.active = showStop;
+        if (!showStop) {
+            return;
+        }
+
+        if (!this.sceneCamera || !this.sceneCamera.isValid) {
+            this.sceneCamera = director.getScene()
+                ?.getComponentsInChildren(Camera)
+                .find((camera) => camera.enabled && camera.node.activeInHierarchy) ?? null;
+        }
+        if (this.sceneCamera) {
+            this.stopIndicator.setWorldRotation(this.sceneCamera.node.worldRotation);
+        }
     }
 
     public SetMovementEnabled(value: boolean): void {

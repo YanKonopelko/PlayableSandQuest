@@ -117,6 +117,10 @@ export class VacuumSystem extends Component {
         return this.baseMaxLength + this.upgradeLengthAdd * this.upgradeLevel;
     }
 
+    public get IsAtMaxLength(): boolean {
+        return this.warning;
+    }
+
     protected onLoad(): void {
         RequiredReference.CheckNode(this, this.tubeHead, 'tubeHead');
         RequiredReference.CheckNode(this, this.machinePivot, 'machinePivot');
