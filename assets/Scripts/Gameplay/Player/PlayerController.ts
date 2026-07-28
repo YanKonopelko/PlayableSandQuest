@@ -4,6 +4,8 @@ import { FloatingJoystick } from '../Input/FloatingJoystick';
 import { RequiredReference } from '../Core/RequiredReference';
 import { PlayerAnimationController } from './PlayerAnimationController';
 import { VacuumSystem } from '../Vacuum/VacuumSystem';
+import { SoundManager } from '../../Sounds/SoundManager';
+import { ESoundType } from '../../Sounds/SoundPreset';
 
 const { ccclass, property } = _decorator;
 
@@ -54,6 +56,9 @@ export class PlayerController extends Component {
     @property({ type: CCFloat })
     public collisionSkin: number = 0.06;
 
+    @property({ type: CCFloat, min: 0.1, tooltip: 'Seconds between footstep sounds while moving.' })
+    public stepInterval: number = 0.34;
+
     private readonly desiredPosition: Vec3 = new Vec3();
     private readonly moveVector: Vec3 = new Vec3();
     private readonly lastDirection: Vec3 = new Vec3(0, 0, 1);
@@ -68,6 +73,8 @@ export class PlayerController extends Component {
     private readonly slideDirection: Vec3 = new Vec3();
     private readonly worldScale: Vec3 = new Vec3();
     private readonly rayOrigin: Vec3 = new Vec3();
+    private stepTimer: number = 0;
+    private nextStepType: ESoundType = ESoundType.Step1;
 
     protected onLoad(): void {
         RequiredReference.Check(this, this.joystick, 'joystick');
@@ -93,11 +100,13 @@ export class PlayerController extends Component {
 
         if (this.autoMoveTarget) {
             this.UpdateAutomaticMovement(dt);
+            this.UpdateFootsteps(dt, !!this.autoMoveTarget);
             return;
         }
 
         if (!this.movementEnabled) {
             this.animationController?.SetMoving(false);
+            this.UpdateFootsteps(dt, false);
             return;
         }
 
@@ -107,6 +116,7 @@ export class PlayerController extends Component {
 
         if (!isMoving) {
             this.animationController?.SetMoving(false);
+            this.UpdateFootsteps(dt, false);
             return;
         }
 
@@ -135,6 +145,7 @@ export class PlayerController extends Component {
         root.setWorldPosition(this.ResolveMovement(root, limitedPosition));
         this.UpdateRotation(dt);
         this.animationController?.SetMoving(true);
+        this.UpdateFootsteps(dt, true);
     }
 
     public SetMovementEnabled(value: boolean): void {
@@ -365,6 +376,24 @@ export class PlayerController extends Component {
         const current = visual.eulerAngles;
         const nextY = this.LerpAngle(current.y, targetAngle, Math.min(1, this.rotationLerp * dt));
         visual.setRotationFromEuler(current.x, nextY, current.z);
+    }
+
+    private UpdateFootsteps(dt: number, isMoving: boolean): void {
+        if (!isMoving) {
+            this.stepTimer = 0;
+            return;
+        }
+
+        this.stepTimer -= Math.max(0, dt);
+        if (this.stepTimer > 0) {
+            return;
+        }
+
+        SoundManager.Instance?.Play(this.nextStepType);
+        this.nextStepType = this.nextStepType === ESoundType.Step1
+            ? ESoundType.Step2
+            : ESoundType.Step1;
+        this.stepTimer = Math.max(0.1, this.stepInterval);
     }
 
     private LerpAngle(a: number, b: number, t: number): number {

@@ -13,6 +13,8 @@ import { PlayerInventory } from '../Player/PlayerInventory';
 import { VacuumSystem } from '../Vacuum/VacuumSystem';
 import { PackshotController } from '../Packshot/PackshotController';
 import { SandField } from '../Sand/SandField';
+import { SoundManager } from '../../Sounds/SoundManager';
+import { ESoundType } from '../../Sounds/SoundPreset';
 
 const { ccclass, property } = _decorator;
 
@@ -119,6 +121,9 @@ export class GameFlowController extends Component {
 
     @property({ type: CCFloat, min: 0 })
     public shopItemTransferDelay: number = 0.12;
+
+    @property({ type: CCFloat, min: 0, tooltip: 'Delay between consecutive gold and storage-money flight starts.' })
+    public transferItemStaggerDelay: number = 0.09;
 
     @property({ type: CCFloat, min: 0.1, tooltip: 'Seconds between automatic gold bars on the unlocked conveyor.' })
     public conveyorSpawnInterval: number = 1.25;
@@ -427,32 +432,48 @@ export class GameFlowController extends Component {
             }
         };
 
+        const deliveryTargets = Array.from(
+            { length: transferred },
+            (_, index) => activeCart?.CreateGoldDeliveryTarget(index) ?? null,
+        );
+        const staggerDelay = Math.max(0, this.transferItemStaggerDelay);
         for (let i = 0; i < transferred; i++) {
-            const slotTarget = activeCart?.CreateGoldDeliveryTarget(i);
-            const flightTarget = slotTarget ?? target;
-            const onGoldArrived = () => {
-                if (slotTarget?.isValid) {
-                    slotTarget.destroy();
+            const launchGold = () => {
+                const slotTarget = deliveryTargets[i];
+                const flightTarget = slotTarget ?? target;
+                const onGoldArrived = () => {
+                    if (slotTarget?.isValid) {
+                        slotTarget.destroy();
+                    }
+                    onOneGoldArrived();
+                };
+
+                if (this.flyService && this.goldFlyPrefab && flightTarget) {
+                    const flyingItem = this.flyService.FlyPrefabToNode(
+                        this.goldFlyPrefab,
+                        startPositions[i] ?? fallbackStart.clone(),
+                        flightTarget,
+                        onGoldArrived,
+                        0.75 + i * 0.03,
+                        1.7,
+                        !!slotTarget,
+                    );
+                    if (flyingItem) {
+                        SoundManager.Instance?.Play(ESoundType.SpendGold);
+                        return;
+                    }
                 }
-                onOneGoldArrived();
+
+                SoundManager.Instance?.Play(ESoundType.SpendGold);
+                onGoldArrived();
             };
 
-            if (this.flyService && this.goldFlyPrefab && flightTarget) {
-                const flyingItem = this.flyService.FlyPrefabToNode(
-                    this.goldFlyPrefab,
-                    startPositions[i] ?? fallbackStart.clone(),
-                    flightTarget,
-                    onGoldArrived,
-                    0.75 + i * 0.03,
-                    1.7,
-                    !!slotTarget,
-                );
-                if (flyingItem) {
-                    continue;
-                }
+            const launchDelay = i * staggerDelay;
+            if (launchDelay > 0) {
+                this.scheduleOnce(launchGold, launchDelay);
+            } else {
+                launchGold();
             }
-
-            onGoldArrived();
         }
     }
 
@@ -469,11 +490,30 @@ export class GameFlowController extends Component {
             }
         };
 
+        const staggerDelay = Math.max(0, this.transferItemStaggerDelay);
         for (let i = 0; i < amount; i++) {
-            if (this.flyService && this.moneyFlyPrefab && storageTarget) {
-                this.flyService.FlyPrefabToNode(this.moneyFlyPrefab, start.clone(), storageTarget, onOneMoneyArrived, 0.28 + i * 0.03);
+            const launchMoneyToStorage = () => {
+                const flyingItem = this.flyService && this.moneyFlyPrefab && storageTarget
+                    ? this.flyService.FlyPrefabToNode(
+                        this.moneyFlyPrefab,
+                        start.clone(),
+                        storageTarget,
+                        onOneMoneyArrived,
+                        0.28 + i * 0.03,
+                    )
+                    : null;
+
+                SoundManager.Instance?.Play(ESoundType.MoneySpend);
+                if (!flyingItem) {
+                    onOneMoneyArrived();
+                }
+            };
+
+            const launchDelay = i * staggerDelay;
+            if (launchDelay > 0) {
+                this.scheduleOnce(launchMoneyToStorage, launchDelay);
             } else {
-                onOneMoneyArrived();
+                launchMoneyToStorage();
             }
         }
     }
@@ -541,38 +581,49 @@ export class GameFlowController extends Component {
             ?? null;
         let completed = 0;
 
+        const staggerDelay = Math.max(0, this.transferItemStaggerDelay);
         for (let i = 0; i < amount; i++) {
-            const itemTarget = moneyStack?.CreateItemTarget(initialMoneyCount + i);
-            const target = itemTarget ?? fallbackTarget;
-            const onMoneyArrived = () => {
-                if (itemTarget?.isValid) {
-                    itemTarget.destroy();
-                }
-                this.inventory?.Add(EItemType.Money, 1);
-                completed++;
-
-                if (completed >= amount) {
-                    this.storageTransferInProgress = false;
-                    if (this.moneyStorage?.IsPlayerInside && this.moneyStorage.Amount > 0) {
-                        this.OnStorageEnter();
+            const launchMoney = () => {
+                const itemTarget = moneyStack?.CreateItemTarget(initialMoneyCount + i);
+                const target = itemTarget ?? fallbackTarget;
+                const onMoneyArrived = () => {
+                    if (itemTarget?.isValid) {
+                        itemTarget.destroy();
                     }
+                    this.inventory?.Add(EItemType.Money, 1);
+                    completed++;
+
+                    if (completed >= amount) {
+                        this.storageTransferInProgress = false;
+                        if (this.moneyStorage?.IsPlayerInside && this.moneyStorage.Amount > 0) {
+                            this.OnStorageEnter();
+                        }
+                    }
+                };
+
+                const flyingItem = this.flyService && this.moneyFlyPrefab && target
+                    ? this.flyService.FlyPrefabToNode(
+                        this.moneyFlyPrefab,
+                        startPositions[i] ?? fallbackStart.clone(),
+                        target,
+                        onMoneyArrived,
+                        0.35 + i * 0.03,
+                        1.2,
+                        !!itemTarget,
+                    )
+                    : null;
+
+                SoundManager.Instance?.Play(ESoundType.MoneyGet);
+                if (!flyingItem) {
+                    onMoneyArrived();
                 }
             };
 
-            const flyingItem = this.flyService && this.moneyFlyPrefab && target
-                ? this.flyService.FlyPrefabToNode(
-                    this.moneyFlyPrefab,
-                    startPositions[i] ?? fallbackStart.clone(),
-                    target,
-                    onMoneyArrived,
-                    0.35 + i * 0.03,
-                    1.2,
-                    !!itemTarget,
-                )
-                : null;
-
-            if (!flyingItem) {
-                this.scheduleOnce(onMoneyArrived, 0.03 * i);
+            const launchDelay = i * staggerDelay;
+            if (launchDelay > 0) {
+                this.scheduleOnce(launchMoney, launchDelay);
+            } else {
+                launchMoney();
             }
         }
 
@@ -635,6 +686,10 @@ export class GameFlowController extends Component {
             const paymentAccepted = shop.ReceivePayment(1);
             this.shopItemInFlight = false;
 
+            if (paymentAccepted) {
+                SoundManager.Instance?.Play(ESoundType.MoneySpend);
+            }
+
             if (!paymentAccepted || completesPurchase || shop.IsPurchased || !shop.IsPlayerInside) {
                 return;
             }
@@ -658,6 +713,7 @@ export class GameFlowController extends Component {
     private OnUpgradePurchased(): void {
         this.StopShopTransfer();
         this.upgradePurchases++;
+        SoundManager.Instance?.Play(ESoundType.Upgrade);
 
         if (this.upgradePurchases <= this.vacuumUpgradePurchasesBeforeConveyor) {
             this.vacuum?.UpgradeLength();

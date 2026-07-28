@@ -89,9 +89,9 @@
     },
     "_lscale": {
       "__type__": "cc.Vec3",
-      "x": 20,
-      "y": 20,
-      "z": 20
+      "x": 0.2,
+      "y": 0.2,
+      "z": 0.2
     },
     "_mobility": 0,
     "_layer": 1073741824,
@@ -117,7 +117,7 @@
     },
     "_materials": [
       {
-        "__uuid__": "e4884b0f-effd-4ad4-be76-0d85b9aef923",
+        "__uuid__": "a1e03bec-d399-443f-9b94-a9f58fd16aac",
         "__expectedType__": "cc.Material"
       }
     ],
@@ -126,7 +126,7 @@
       "__id__": 5
     },
     "_mesh": {
-      "__uuid__": "9fb98a92-fee1-46fa-b644-314e9212c069@7035a",
+      "__uuid__": "9fb98a92-fee1-46fa-b644-314e9212c069@8042a",
       "__expectedType__": "cc.Mesh"
     },
     "_shadowCastingMode": 0,
@@ -187,6 +187,6 @@
     },
     "fileId": "b5ax1Uvd1OKK6jygee2ubq",
     "instance": null,
-    "targetOverrides": null
+    "targetOverrides": []
   }
 ]

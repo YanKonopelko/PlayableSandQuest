@@ -1,4 +1,6 @@
 import { _decorator, Component, Node, Vec3 } from 'cc';
+import { SoundManager } from '../Sounds/SoundManager';
+import { ESoundType } from '../Sounds/SoundPreset';
 
 const { ccclass, property } = _decorator;
 
@@ -19,11 +21,15 @@ export class ProximityWobble extends Component {
     @property({ min: 0, tooltip: 'How quickly the wobble fades in and out.' })
     public blendSpeed: number = 6;
 
+    @property({ tooltip: 'Play LockInteract once when the player enters the activation radius.' })
+    public playLockSoundOnApproach: boolean = false;
+
     private readonly baseEuler: Vec3 = new Vec3();
     private readonly objectWorldPosition: Vec3 = new Vec3();
     private readonly playerWorldPosition: Vec3 = new Vec3();
     private phase: number = 0;
     private blendWeight: number = 0;
+    private playerWasNear: boolean = false;
 
     protected onLoad(): void {
         this.baseEuler.set(this.node.eulerAngles);
@@ -32,6 +38,7 @@ export class ProximityWobble extends Component {
     protected update(deltaTime: number): void {
         const player = this.player;
         if (!player?.isValid) {
+            this.playerWasNear = false;
             this.ResetRotation();
             return;
         }
@@ -43,6 +50,11 @@ export class ProximityWobble extends Component {
         const dz = this.objectWorldPosition.z - this.playerWorldPosition.z;
         const activationDistance = Math.max(0, this.activationDistance);
         const isPlayerNear = dx * dx + dz * dz <= activationDistance * activationDistance;
+        if (isPlayerNear && !this.playerWasNear && this.playLockSoundOnApproach) {
+            SoundManager.Instance?.Play(ESoundType.LockInteract);
+        }
+        this.playerWasNear = isPlayerNear;
+
         const targetWeight = isPlayerNear ? 1 : 0;
         const blendFactor = 1 - Math.exp(-Math.max(0, this.blendSpeed) * deltaTime);
 
@@ -63,6 +75,7 @@ export class ProximityWobble extends Component {
     protected onDisable(): void {
         this.blendWeight = 0;
         this.phase = 0;
+        this.playerWasNear = false;
         this.ResetRotation();
     }
 

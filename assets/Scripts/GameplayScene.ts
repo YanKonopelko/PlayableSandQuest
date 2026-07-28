@@ -14,7 +14,14 @@ const { ccclass } = _decorator;
 export class GameplayScene extends Component {
     public static paused: boolean = false;
 
+    private readonly androidLink: string = 'https://play.google.com/store/apps/details?id=com.evrika.miner.camp';
+    private readonly iosLink: string = 'https://apps.apple.com/app/id6447562895';
+
     private audioStarted: boolean = false;
+
+    protected onLoad(): void {
+        SoundManager.EnsureInstance();
+    }
 
     protected start(): void {
         document.addEventListener('visibilitychange', this.OnVisibilityChanged);
@@ -41,12 +48,15 @@ export class GameplayScene extends Component {
     }
 
     private async StartAudioAfterFirstTap(): Promise<void> {
-        if (this.audioStarted || !SoundManager.Instance) {
+        const soundManager = SoundManager.EnsureInstance();
+        if (this.audioStarted || !soundManager) {
             return;
         }
 
         this.audioStarted = true;
-        await SoundManager.Instance.Init();
-        SoundManager.Instance.PlayMusic(ESoundType.Music);
+        await soundManager.Init();
+        if (soundManager.HasPreset(ESoundType.Music)) {
+            soundManager.PlayMusic(ESoundType.Music);
+        }
     }
 }

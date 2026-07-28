@@ -1,6 +1,8 @@
 import { _decorator, CCFloat, CCInteger, Component, instantiate, Material, MeshRenderer, Node, Prefab, tween, Tween, Vec3 } from 'cc';
 import { TweenUtils } from '../../Utills/TweenUtils';
 import { RequiredReference } from '../Core/RequiredReference';
+import { SoundManager } from '../../Sounds/SoundManager';
+import { ESoundType } from '../../Sounds/SoundPreset';
 
 const { ccclass, property } = _decorator;
 
@@ -129,6 +131,10 @@ export class VacuumSystem extends Component {
         this.SetVisualActive(false);
     }
 
+    protected onDestroy(): void {
+        SoundManager.Instance?.StopStopableSound(ESoundType.VacuumLoop);
+    }
+
     protected update(dt: number): void {
         if (!this.active && !this.returningHome) {
             return;
@@ -154,6 +160,7 @@ export class VacuumSystem extends Component {
         this.returningHome = false;
         this.headAttached = false;
         this.SetVisualActive(true);
+        SoundManager.Instance?.Play(ESoundType.VacuumLoop, true, true);
         TweenUtils.FlyTweenWithMidlePointAndScaleToNode(
             this.tubeHead,
             new Vec3(0, 1.2, 0),
@@ -173,6 +180,7 @@ export class VacuumSystem extends Component {
     public Deactivate(): void {
         this.active = false;
         this.headAttached = false;
+        SoundManager.Instance?.StopStopableSound(ESoundType.VacuumLoop);
         this.SetWarning(false);
         if (!this.tubeHead || !this.tubeHeadHomePivot) {
             this.returningHome = false;

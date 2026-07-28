@@ -1,240 +1,311 @@
-import { _decorator, Component, Node } from 'cc';
-import { AudioSource } from 'cc';
-import { director } from 'cc';
-import { AudioClip } from 'cc';
-import { NodeEventType } from 'cc';
+import { _decorator, AudioClip, AudioSource, Component, director, Node } from 'cc';
 import { TimeUtils } from '../Utills/TimeUtils';
 import { GameplayScene } from '../GameplayScene';
 import { ESoundType, SoundPreset } from './SoundPreset';
+
 const { ccclass, property } = _decorator;
 
 @ccclass('SoundManager')
 export class SoundManager extends Component {
+    @property({ type: [SoundPreset] })
+    public presets: SoundPreset[] = [];
 
-    @property({ type: [SoundPreset] }) presets: SoundPreset[] = [];
-    @property({ type: AudioSource }) public musicSource: AudioSource;
-    @property({ type: AudioSource }) public soundSource: AudioSource;
+    @property({ type: AudioSource })
+    public musicSource: AudioSource | null = null;
 
-    private presetMap: Map<ESoundType, SoundPreset> = new Map<ESoundType, SoundPreset>();
+    @property({ type: AudioSource })
+    public soundSource: AudioSource | null = null;
 
-    private stopableSources: Map<ESoundType, AudioSource> = new Map<ESoundType, AudioSource>();
-
-
+    private static instance: SoundManager | null = null;
+    private readonly presetMap: Map<ESoundType, SoundPreset> = new Map();
+    private readonly stopableSources: Map<ESoundType, AudioSource> = new Map();
+    private readonly stopableSoundsSources: AudioSource[] = [];
+    private initPromise: Promise<void> | null = null;
     private _soundMuted: boolean = false;
     private _musicEnabled: boolean = true;
+    private _soundSourceVolume: number = 1;
     private _originalVolume: number = 1;
+    private currentMusic: ESoundType | null = null;
+
+    public static get Instance(): SoundManager | null {
+        return this.instance;
+    }
+
+    public static EnsureInstance(): SoundManager | null {
+        if (this.instance?.node?.isValid) {
+            return this.instance;
+        }
+
+        const scene = director.getScene();
+        if (!scene) {
+            return null;
+        }
+
+        const sceneManager = scene.getComponentInChildren(SoundManager);
+        if (sceneManager) {
+            this.instance = sceneManager;
+            sceneManager.EnsureAudioSources();
+            return sceneManager;
+        }
+
+        const node = new Node('SoundManager');
+        scene.addChild(node);
+        const manager = node.addComponent(SoundManager);
+        manager.EnsureAudioSources();
+        return manager;
+    }
 
     public get soundMuted(): boolean {
         return this._soundMuted;
     }
+
     public get musicEnabled(): boolean {
         return this._musicEnabled;
     }
-    public set soundMuted(value) {
+
+    public set soundMuted(value: boolean) {
         this._soundMuted = value;
-        this.stopableSources.forEach(element => {
-            element.volume = !value ? 0.3 : 0;
+        this.stopableSources.forEach((source, type) => {
+            source.volume = value ? 0 : (this.presetMap.get(type)?.volume ?? 0.5);
         });
-        // Выключить все останавливаемые звуки
-        if (!value) this.soundSource.volume = 0;
-
+        if (this.soundSource) {
+            this.soundSource.volume = value ? 0 : this._soundSourceVolume;
+        }
     }
-    public set musicEnabled(value) {
+
+    public set musicEnabled(value: boolean) {
         this._musicEnabled = value;
-        this.musicSource.volume = value ? this._originalVolume : 0;
+        if (this.musicSource) {
+            this.musicSource.volume = value ? this._originalVolume : 0;
+        }
     }
 
-    private static instance: SoundManager = null;
-
-    public static get Instance(): SoundManager {
-        return this.instance;
-    }
-
-    async start() {
-        if (SoundManager.instance) {
+    protected onLoad(): void {
+        if (SoundManager.instance && SoundManager.instance !== this) {
             this.node.destroy();
             return;
         }
-        // this.soundMuted = !window.SoundOn;
-        // this.musicEnabled = window.SoundOn;
+
         SoundManager.instance = this;
-        this.presets.forEach(element => {
-            this.presetMap.set(element.soundType, element);
-        });
-        director.addPersistRootNode(this.node);
-        await this.Init();
+        this.EnsureAudioSources();
+        this._soundSourceVolume = this.soundSource?.volume ?? 1;
+        this.EnsureDefaultPresets();
+        this.RebuildPresetMap();
+
+        if (this.node.parent === director.getScene()) {
+            director.addPersistRootNode(this.node);
+        }
     }
 
-    public mute(value: boolean) {
-        SoundManager.Instance.soundMuted = value;
-        SoundManager.Instance.musicEnabled = !value;
+    protected start(): void {
+        void this.Init();
     }
 
-    public async Init() {
-        let neccesarySoundsAwait: Promise<void>[] = [];
-        this.presets.forEach(element => {
-            if (element.isNecessary) {
-                neccesarySoundsAwait.push(element.LoadClip());
-            }
-        });
-
-        await Promise.all(neccesarySoundsAwait);
-        this.LoadAllClips()
-
+    protected onDestroy(): void {
+        if (SoundManager.instance === this) {
+            SoundManager.instance = null;
+        }
     }
 
-    public LoadAllClips() {
-        this.presets.forEach(element => {
-            element.LoadClip();
-        });
+    public mute(value: boolean): void {
+        this.soundMuted = value;
+        this.musicEnabled = !value;
     }
 
-    public Play(type: ESoundType, isStopable: boolean = false, isLoop: boolean = false) {
-        let preset = this.presetMap.get(type);
+    public Init(): Promise<void> {
+        if (!this.initPromise) {
+            this.EnsureDefaultPresets();
+            this.RebuildPresetMap();
+            this.initPromise = Promise.all(
+                this.presets
+                    .filter((preset) => preset.isNecessary)
+                    .map((preset) => preset.LoadClip()),
+            ).then(() => this.LoadAllClips());
+        }
+        return this.initPromise;
+    }
+
+    public LoadAllClips(): void {
+        this.presets.forEach((preset) => void preset.LoadClip());
+    }
+
+    public HasPreset(type: ESoundType): boolean {
+        return this.presetMap.has(type);
+    }
+
+    public Play(type: ESoundType, isStopable: boolean = false, isLoop: boolean = false): void {
+        const preset = this.presetMap.get(type);
         if (!preset) {
             console.warn(`Have no presets for type: ${type}`);
-            return
+            return;
         }
 
         if (!preset.HasLoaded) {
-            console.warn(`Preset for type: ${type} is not loaded yet`);
-            return
+            void preset.LoadClip().then(() => {
+                if (preset.clip) {
+                    this.Play(type, isStopable, isLoop);
+                }
+            });
+            return;
         }
 
         if (isStopable) {
-            this.PlayStopableSound(preset, isLoop);
-        }
-        else {
+            void this.PlayStopableSound(preset, isLoop);
+        } else {
             this.PlayLocal(preset);
         }
-
     }
 
-
-    private PlayLocal(preset: SoundPreset) {
-        if (this._soundMuted || GameplayScene.paused) return;
-        let clip: AudioClip = preset.clip;
-        let volume: number = preset.volume;
-        if (clip == null)
-            return;
-
-
-
-        this.soundSource.volume = volume;
-        this.soundSource.playOneShot(clip);
-    }
-
-    public PlayMusic(type: ESoundType) {
-        let preset = this.presetMap.get(type);
+    public PlayMusic(type: ESoundType): void {
+        const preset = this.presetMap.get(type);
         if (!preset) {
             console.warn(`Have no presets for type: ${type}`);
-            return
+            return;
         }
 
         if (!preset.HasLoaded) {
-            console.warn(`Preset for type: ${type} is not loaded yet`);
-            return
+            void preset.LoadClip().then(() => {
+                if (preset.clip) {
+                    this.PlayMusic(type);
+                }
+            });
+            return;
         }
 
         this.PlayMusicLocal(preset);
     }
 
-    public PauseMusic() {
-        if (this.musicSource && this.musicSource.playing) {
+    public PauseMusic(): void {
+        if (this.musicSource?.playing) {
             this.musicSource.pause();
         }
     }
 
-    public ResumeMusic() {
+    public ResumeMusic(): void {
         if (this.musicSource && !this.musicSource.playing && this.musicSource.clip) {
             this.musicSource.play();
         }
     }
 
-    private currentMusic: ESoundType = null;
-    private PlayMusicLocal(preset: SoundPreset) {
-        if ( GameplayScene.paused) return;
-
-        let clip: AudioClip = preset.clip;
-        let volume: number = preset.volume;
-
-        if (clip == null)
+    public StopStopableSound(type: ESoundType): void {
+        const source = this.stopableSources.get(type);
+        if (!source) {
             return;
+        }
+
+        source.stop();
+        source.clip = null;
+        this.stopableSources.delete(type);
+    }
+
+    public StopAllSounds(): void {
+        this.stopableSources.forEach((source) => {
+            source.stop();
+            source.clip = null;
+        });
+        this.stopableSources.clear();
+    }
+
+    private PlayLocal(preset: SoundPreset): void {
+        if (this._soundMuted || GameplayScene.paused || !preset.clip || !this.soundSource) {
+            return;
+        }
+
+        this.soundSource.playOneShot(preset.clip, preset.volume);
+    }
+
+    private PlayMusicLocal(preset: SoundPreset): void {
+        if (GameplayScene.paused || !preset.clip || !this.musicSource) {
+            return;
+        }
 
         if (this.musicSource.playing && this.musicSource.clip && this.currentMusic === preset.soundType) {
             return;
         }
 
-        this.musicSource.volume = volume;
-        if(!this.musicEnabled){
-            this.musicSource.volume = 0;
-        }
-        this._originalVolume = volume;
+        this._originalVolume = preset.volume;
+        this.musicSource.volume = this.musicEnabled ? preset.volume : 0;
         this.musicSource.loop = true;
         this.musicSource.stop();
-        this.musicSource.clip = clip;
+        this.musicSource.clip = preset.clip;
         this.musicSource.play();
+        this.currentMusic = preset.soundType;
     }
 
-    private stopableSoundsSources: AudioSource[] = [];
-
-    private async PlayStopableSound(preset: SoundPreset, isLoop: boolean = false) {
-        if (this._soundMuted || GameplayScene.paused) return;
-        let clip: AudioClip = preset.clip;
-        let volume: number = preset.volume;
-
-        if (clip == null)
+    private async PlayStopableSound(preset: SoundPreset, isLoop: boolean): Promise<void> {
+        if (this._soundMuted || GameplayScene.paused || !preset.clip) {
             return;
+        }
 
-        let source: AudioSource = null;
-        let playNow: boolean = false;
-        this.stopableSoundsSources.forEach(element => {
-            if (element.clip == clip) {
-                source = element;
-                playNow = true;
-                return;
-            }
-        });
-
-        if (playNow)
+        const clip: AudioClip = preset.clip;
+        const alreadyPlaying = this.stopableSoundsSources.find(
+            (candidate) => candidate.clip === clip && candidate.playing,
+        );
+        if (alreadyPlaying) {
             return;
+        }
 
-        this.stopableSoundsSources.forEach(element => {
-            if (!element.playing) {
-                source = element;
-                return;
-            }
-        });
-
-        if (source == null) {
-            source = this.addComponent(AudioSource);
+        let source = this.stopableSoundsSources.find((candidate) => !candidate.playing) ?? null;
+        if (!source) {
+            source = this.node.addComponent(AudioSource);
             this.stopableSoundsSources.push(source);
         }
 
         this.stopableSources.set(preset.soundType, source);
-        source.volume = volume;
+        source.volume = preset.volume;
         source.clip = clip;
-        source.loop = isLoop
+        source.loop = isLoop;
         source.play();
+
+        if (isLoop) {
+            return;
+        }
+
         await TimeUtils.TimeoutSeconds(clip.getDuration());
-        if (source.clip != null && clip == source.clip && !isLoop) {
+        if (source.clip === clip) {
             this.StopStopableSound(preset.soundType);
         }
     }
 
-    public StopStopableSound(type: ESoundType) {
-        if (this.stopableSources.has(type)) {
-            let source = this.stopableSources.get(type);
-            source.stop();
-            source.clip = null;
-            this.stopableSources.delete(type);
+    private EnsureAudioSources(): void {
+        this.musicSource ??= this.node.addComponent(AudioSource);
+        this.soundSource ??= this.node.addComponent(AudioSource);
+        if (this._soundMuted) {
+            this.soundSource.volume = 0;
         }
     }
-    public StopAllSounds() {
-        this.stopableSources.forEach(element => {
-            element.stop();
-            element.clip = null;
-        });
-        this.stopableSources = new Map<ESoundType, AudioSource>();
+
+    private EnsureDefaultPresets(): void {
+        const defaults: Array<[ESoundType, string, number]> = [
+            [ESoundType.VacuumLoop, '01_vacuum_loop', 0.28],
+            [ESoundType.Step1, 'stepSound', 0.38],
+            [ESoundType.Step2, 'stepSound_2', 0.38],
+            [ESoundType.GetGoldNugget, 'GetGoldNuggetSound', 0.55],
+            [ESoundType.SpendGold, 'SpendGold', 0.65],
+            [ESoundType.MoneyGet, 'MoneyGet', 0.6],
+            [ESoundType.MoneySpend, 'MoneySpend', 0.6],
+            [ESoundType.LockInteract, 'LockInteract', 0.55],
+            [ESoundType.Upgrade, 'Upgrade', 0.7],
+        ];
+        const configuredTypes = new Set(this.presets.map((preset) => preset.soundType));
+
+        for (const [soundType, path, volume] of defaults) {
+            if (configuredTypes.has(soundType)) {
+                continue;
+            }
+
+            const preset = new SoundPreset();
+            preset.soundType = soundType;
+            preset.PathPlusSoundName = path;
+            preset.bundleName = 'Audio';
+            preset.isNecessary = true;
+            preset.volume = volume;
+            this.presets.push(preset);
+        }
+    }
+
+    private RebuildPresetMap(): void {
+        this.presetMap.clear();
+        this.presets.forEach((preset) => this.presetMap.set(preset.soundType, preset));
     }
 }

@@ -15,7 +15,11 @@
         "gltfIndex": 0,
         "fixAlphaTransparencyArtifacts": true,
         "hasAlpha": true,
-        "type": "texture"
+        "type": "texture",
+        "compressSettings": {
+          "useCompressTexture": true,
+          "presetId": "b3uuu1cQVG5JLfuk1szeqs"
+        }
       },
       "ver": "1.0.3",
       "imported": true,
@@ -329,6 +333,8 @@
           }
         ]
       }
-    }
+    },
+    "dumpMaterials": false,
+    "materialDumpDir": "db://assets/Models/Materials_SandMachine"
   }
 }

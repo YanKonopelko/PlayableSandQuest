@@ -2,6 +2,8 @@ import { _decorator, CCFloat, Component, Enum, Node, Prefab, Vec3 } from 'cc';
 import { EItemType } from '../Items/ItemType';
 import { ItemFlyService } from '../Items/ItemFlyService';
 import { PlayerInventory } from '../Player/PlayerInventory';
+import { SoundManager } from '../../Sounds/SoundManager';
+import { ESoundType } from '../../Sounds/SoundPreset';
 
 const { ccclass, property } = _decorator;
 
@@ -69,6 +71,7 @@ export class SandCollectableOre extends Component {
         this.collected = true;
         const start = this.node.worldPosition.clone();
         this.node.active = false;
+        SoundManager.Instance?.Play(ESoundType.GetGoldNugget);
 
         const complete = () => inventory.CommitReserved(this.resultItem, 1);
 
