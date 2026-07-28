@@ -286,6 +286,7 @@ export class SoundManager extends Component {
             [ESoundType.MoneySpend, 'MoneySpend', 0.6],
             [ESoundType.LockInteract, 'LockInteract', 0.55],
             [ESoundType.Upgrade, 'Upgrade', 0.7],
+            [ESoundType.ButtonClick, 'ButtonClick', 0.7],
         ];
         const configuredTypes = new Set(this.presets.map((preset) => preset.soundType));
 

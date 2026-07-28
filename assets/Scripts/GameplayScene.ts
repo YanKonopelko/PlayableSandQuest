@@ -39,6 +39,7 @@ export class GameplayScene extends Component {
     }
 
     public ToStore(): void {
+        SoundManager.Instance?.Play(ESoundType.ButtonClick);
         window.ToStore?.();
     }
 

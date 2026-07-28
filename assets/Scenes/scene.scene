@@ -59437,6 +59437,9 @@
       },
       {
         "__id__": 3772
+      },
+      {
+        "__id__": 3844
       }
     ],
     "musicSource": {
@@ -62153,5 +62156,13 @@
   {
     "__type__": "cc.PostSettingsInfo",
     "_toneMappingType": 0
+  },
+  {
+    "__type__": "SoundPreset",
+    "soundType": 11,
+    "PathPlusSoundName": "ButtonClick",
+    "bundleName": "Audio",
+    "isNecessary": true,
+    "volume": 0.7
   }
 ]
