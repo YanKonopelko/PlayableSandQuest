@@ -26,6 +26,7 @@ export class GameplayScene extends Component {
     protected start(): void {
         document.addEventListener('visibilitychange', this.OnVisibilityChanged);
         input.once(Input.EventType.TOUCH_START, this.StartAudioAfterFirstTap, this);
+        void this.StartMusic();
     }
 
     protected onDestroy(): void {
@@ -49,12 +50,20 @@ export class GameplayScene extends Component {
     }
 
     private async StartAudioAfterFirstTap(): Promise<void> {
-        const soundManager = SoundManager.EnsureInstance();
-        if (this.audioStarted || !soundManager) {
+        if (this.audioStarted) {
             return;
         }
 
         this.audioStarted = true;
+        await this.StartMusic();
+    }
+
+    private async StartMusic(): Promise<void> {
+        const soundManager = SoundManager.EnsureInstance();
+        if (!soundManager) {
+            return;
+        }
+
         await soundManager.Init();
         if (soundManager.HasPreset(ESoundType.Music)) {
             soundManager.PlayMusic(ESoundType.Music);

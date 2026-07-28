@@ -1,0 +1,14 @@
+{
+  "ver": "1.1.50",
+  "importer": "prefab",
+  "imported": true,
+  "uuid": "64eed259-59bd-42c8-8fb9-9610e1ee4447",
+  "files": [
+    ".json"
+  ],
+  "subMetas": {},
+  "userData": {
+    "syncNodeName": "VacuumUpgradeParticle",
+    "hasIcon": false
+  }
+}

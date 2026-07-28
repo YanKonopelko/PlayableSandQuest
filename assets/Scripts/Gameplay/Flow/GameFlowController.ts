@@ -15,6 +15,7 @@ import { PackshotController } from '../Packshot/PackshotController';
 import { SandField } from '../Sand/SandField';
 import { SoundManager } from '../../Sounds/SoundManager';
 import { ESoundType } from '../../Sounds/SoundPreset';
+import { EParticleType, ParticleManager } from '../../Particles/ParticleManager';
 
 const { ccclass, property } = _decorator;
 
@@ -43,6 +44,9 @@ export class GameFlowController extends Component {
 
     @property(VacuumSystem)
     public vacuum: VacuumSystem | null = null;
+
+    @property({ type: Node, tooltip: 'World-space origin for the vacuum upgrade celebration.' })
+    public sandMachine: Node | null = null;
 
     @property(ItemFlyService)
     public flyService: ItemFlyService | null = null;
@@ -716,7 +720,10 @@ export class GameFlowController extends Component {
         SoundManager.Instance?.Play(ESoundType.Upgrade);
 
         if (this.upgradePurchases <= this.vacuumUpgradePurchasesBeforeConveyor) {
-            this.vacuum?.UpgradeLength();
+            const upgraded = this.vacuum?.UpgradeLength() ?? false;
+            if (upgraded && this.sandMachine) {
+                ParticleManager.Instance?.PlayAtNode(EParticleType.VacuumUpgrade, this.sandMachine);
+            }
             this.SyncGoldOreCapacity();
             this.upgradeShop?.ResetShop();
             this.SetState(EGameFlowState.GoToSand);

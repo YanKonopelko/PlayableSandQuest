@@ -1,0 +1,78 @@
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: legacy/main-functions/outline-vs:vert
+      frag: outline-fs:frag
+      rasterizerState:
+        cullMode: front
+      depthStencilState:
+        depthFunc: less_equal
+        depthTest: true
+        depthWrite: true
+      properties:
+        lineWidth:    { value: 15.0, target: outlineParams.x, editor: { range: [0.0, 40.0, 0.5], slide: true } }
+        depthBias:    { value: 0.0, target: outlineParams.y }
+        outlineColor: { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+    - vert: legacy/main-functions/general-vs:vert
+      frag: textured-fs:frag
+      propertyIndex: 1
+      properties:
+        lightDirection: { value: [0.25, 1.0, -0.25, 1.0] }
+        brightness:     { value: 0.5, editor: { range: [0.0, 1.0, 0.01], slide: true } }
+        shadow:         { value: 0.5, editor: { range: [0.0, 1.0, 0.01], slide: true } }
+        mainTexture:    { value: white }
+        mainTiling:     { value: [1.0, 1.0] }
+        mainOffset:     { value: [0.0, 0.0] }
+        mainColor:      { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+}%
+
+CCProgram outline-fs %{
+  precision highp float;
+  #include <legacy/output>
+
+  uniform OutlineFrag {
+    vec4 outlineColor;
+  };
+
+  vec4 frag () {
+    return CCFragOutput(outlineColor);
+  }
+}%
+
+CCProgram textured-fs %{
+  precision highp float;
+  #include <legacy/output>
+  #include <legacy/fog-fs>
+
+  in vec2 v_uv;
+  in vec3 v_position;
+  in vec3 v_normal;
+
+  uniform sampler2D mainTexture;
+
+  uniform Constant {
+    vec2 mainTiling;
+    vec2 mainOffset;
+    vec4 mainColor;
+    vec4 lightDirection;
+    float brightness;
+    float shadow;
+  };
+
+  float lerp(float a, float b, float t) {
+    return (1.0 - t) * a + t * b;
+  }
+
+  vec4 frag () {
+    vec2 uv = v_uv * mainTiling + mainOffset;
+    vec4 color = mainColor * texture(mainTexture, uv);
+    vec3 lightDir = normalize(lightDirection.xyz);
+    float lightValue = dot(v_normal, lightDir);
+    color.rgb *= mainColor.rgb + lightValue * brightness;
+    float lighting = max(lerp(1.5, 0.0, shadow), lightValue) + lightValue * brightness;
+    color.rgb *= mainColor.rgb * lighting;
+    CC_APPLY_FOG(color, v_position);
+    return CCFragOutput(color);
+  }
+}%

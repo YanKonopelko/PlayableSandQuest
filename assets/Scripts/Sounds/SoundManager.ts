@@ -277,6 +277,7 @@ export class SoundManager extends Component {
 
     private EnsureDefaultPresets(): void {
         const defaults: Array<[ESoundType, string, number]> = [
+            [ESoundType.Music, 'Music', 0.3],
             [ESoundType.VacuumLoop, '01_vacuum_loop', 0.28],
             [ESoundType.Step1, 'stepSound', 0.38],
             [ESoundType.Step2, 'stepSound_2', 0.38],
