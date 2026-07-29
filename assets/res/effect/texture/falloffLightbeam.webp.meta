@@ -5,7 +5,7 @@
   "uuid": "19761300-a118-4a2a-b42a-a816435c51ce",
   "files": [
     ".json",
-    ".png"
+    ".webp"
   ],
   "subMetas": {
     "6c48a": {
@@ -37,6 +37,10 @@
     "hasAlpha": true,
     "type": "texture",
     "redirect": "19761300-a118-4a2a-b42a-a816435c51ce@6c48a",
-    "fixAlphaTransparencyArtifacts": false
+    "fixAlphaTransparencyArtifacts": false,
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "b3uuu1cQVG5JLfuk1szeqs"
+    }
   }
 }

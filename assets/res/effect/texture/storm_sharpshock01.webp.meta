@@ -2,16 +2,16 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "19c42cb0-b15e-4fb4-8da1-ae7772ecf732",
+  "uuid": "e5b6eabd-cdbd-4756-a6d0-0bcb6b7d4385",
   "files": [
     ".json",
-    ".png"
+    ".webp"
   ],
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "19c42cb0-b15e-4fb4-8da1-ae7772ecf732@6c48a",
-      "displayName": "Ring_002",
+      "uuid": "e5b6eabd-cdbd-4756-a6d0-0bcb6b7d4385@6c48a",
+      "displayName": "storm_sharpshock01",
       "id": "6c48a",
       "name": "texture",
       "userData": {
@@ -22,7 +22,7 @@
         "mipfilter": "none",
         "anisotropy": 0,
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "19c42cb0-b15e-4fb4-8da1-ae7772ecf732",
+        "imageUuidOrDatabaseUri": "e5b6eabd-cdbd-4756-a6d0-0bcb6b7d4385",
         "visible": false
       },
       "ver": "1.0.22",
@@ -36,7 +36,11 @@
   "userData": {
     "hasAlpha": true,
     "type": "texture",
-    "redirect": "19c42cb0-b15e-4fb4-8da1-ae7772ecf732@6c48a",
-    "fixAlphaTransparencyArtifacts": false
+    "redirect": "e5b6eabd-cdbd-4756-a6d0-0bcb6b7d4385@6c48a",
+    "fixAlphaTransparencyArtifacts": false,
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "b3uuu1cQVG5JLfuk1szeqs"
+    }
   }
 }
