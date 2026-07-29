@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, CCInteger, Component, Enum, EventTouch, input, Input, instantiate, Material, MeshRenderer, Node, Prefab, Vec3, Vec4 } from 'cc';
+import { _decorator, CCFloat, CCInteger, Component, Enum, EventTouch, input, Input, instantiate, Material, MeshRenderer, Node, Prefab, tween, Vec3, Vec4 } from 'cc';
 import { CartQueueController } from '../CartQueue/CartQueueController';
 import { CartUnit } from '../CartQueue/CartUnit';
 import { HintController } from '../Hints/HintController';
@@ -739,11 +739,26 @@ export class GameFlowController extends Component {
     }
 
     private UnlockConveyorAndFinalShops(): void {
-        this.SetConveyorVisible(true);
+        this.ShowConveyorAnimated();
         this.StartConveyorBeltAnimation();
-        this.StartAutoConveyor();
         this.SetFinalVisualShopsVisible(true);
         this.SetState(EGameFlowState.AwaitFinalTap);
+    }
+
+    private ShowConveyorAnimated(): void {
+        const root = this.conveyorRoot;
+        if (!root) {
+            return;
+        }
+
+        const targetScale = root.scale.clone();
+        root.setScale(Vec3.ZERO);
+        root.active = true;
+
+        tween(root)
+            .to(0.3, { scale: targetScale }, { easing: 'backOut' })
+            .call(() => this.StartAutoConveyor())
+            .start();
     }
 
     private StartConveyorBeltAnimation(): void {
