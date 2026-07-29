@@ -47,6 +47,10 @@ export class SandField extends Component {
         return this.surface?.ErasedCellCount ?? 0;
     }
 
+    public get IsPlayerInside(): boolean {
+        return this.playerColliders.size > 0;
+    }
+
     protected onLoad(): void {
         RequiredReference.Check(this, this.vacuumSystem, 'vacuumSystem');
         RequiredReference.CheckNode(this, this.vacuumProbe, 'vacuumProbe');

@@ -275,7 +275,10 @@ export class GameFlowController extends Component {
         }
 
         const candidates: Array<{ target: HintTarget | null; available: boolean }> = [
-            { target: this.sandHint, available: true },
+            {
+                target: this.sandHint,
+                available: !this.sandField?.IsPlayerInside && !this.vacuum?.IsActive,
+            },
             {
                 target: this.exchangeHint,
                 available: this.CanFillActiveCartFromInventory(),
