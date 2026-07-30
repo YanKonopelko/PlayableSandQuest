@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, CCInteger, Component, Enum, instantiate, Label, Material, MeshRenderer, Node, Prefab, tween, Tween, Vec3, Vec4 } from 'cc';
+import { _decorator, animation, CCFloat, CCInteger, Component, Enum, instantiate, Label, Material, MeshRenderer, Node, Prefab, tween, Tween, Vec3, Vec4 } from 'cc';
 import { CartQueueController } from '../CartQueue/CartQueueController';
 import { CartUnit } from '../CartQueue/CartUnit';
 import { HintController } from '../Hints/HintController';
@@ -230,8 +230,11 @@ export class GameFlowController extends Component {
     private shopTransfer: ShopInteractor | null = null;
     private exitingSandAutomatically: boolean = false;
     private conveyorRunning: boolean = false;
+    private longConveyorPurchased: boolean = false;
     private longConveyorUnlocked: boolean = false;
+    private sellerPurchased: boolean = false;
     private sellerUnlocked: boolean = false;
+    private sellerAnimation: PlayerAnimationController | null = null;
     private conveyorSpawnTimer: number = 0;
     private conveyorSpawnPoint: Node | null = null;
     private readonly conveyorItems: IConveyorGoldItem[] = [];
@@ -261,6 +264,7 @@ export class GameFlowController extends Component {
         this.SetConveyorVisible(false);
         this.SetLongConveyorVisible(false);
         this.SetConveyorStorageVisible(false);
+        this.ConfigureSellerVisual();
         this.SetSellerVisible(false);
         this.SetFinalVisualShopsVisible(false);
         this.SetState(EGameFlowState.GoToSand);
@@ -390,11 +394,16 @@ export class GameFlowController extends Component {
         const candidates: Array<{ target: HintTarget | null; available: boolean }> = [
             {
                 target: this.sandHint,
-                available: !this.sandField?.IsPlayerInside && !this.vacuum?.IsActive,
+                available:
+                    !!this.sandInteractor?.node.activeInHierarchy
+                    && !this.sandField?.IsPlayerInside
+                    && !this.vacuum?.IsActive,
             },
             {
                 target: this.exchangeHint,
-                available: this.CanDepositOrExchangeGold(),
+                available:
+                    !(this.sellerPurchased && this.longConveyorPurchased)
+                    && this.CanDepositOrExchangeGold(),
             },
             {
                 target: this.storageHint,
@@ -402,7 +411,9 @@ export class GameFlowController extends Component {
             },
             {
                 target: this.upgradeShopHint,
-                available: (this.inventory?.GetCount(EItemType.Money) ?? 0) > 0,
+                available:
+                    !!this.upgradeShop?.node.activeInHierarchy
+                    && (this.inventory?.GetCount(EItemType.Money) ?? 0) > 0,
             },
         ];
 
@@ -687,7 +698,7 @@ export class GameFlowController extends Component {
                         start.clone(),
                         storageTarget,
                         onOneMoneyArrived,
-                        0.28 + i * 0.03,
+                        0.5 + i * 0.03,
                     )
                     : null;
 
@@ -804,7 +815,7 @@ export class GameFlowController extends Component {
                         startPositions[i] ?? fallbackStart.clone(),
                         target,
                         onMoneyArrived,
-                        0.35 + i * 0.03,
+                        0.5 + i * 0.03,
                         1.2,
                         !!itemTarget,
                     )
@@ -907,7 +918,7 @@ export class GameFlowController extends Component {
 
     private OnConveyorStorageAmountChanged(amount: number): void {
         if (amount > 0 && this.longConveyorUnlocked) {
-            this.MoveCollectedGoldToOrcStorage();
+            this.MoveCollectedGoldToLongConveyor();
             return;
         }
         if (amount > 0 && this.conveyorGoldStorage?.IsPlayerInside) {
@@ -1040,6 +1051,7 @@ export class GameFlowController extends Component {
             return;
         }
 
+        this.HidePurchasedFinalShop(shop);
         SoundManager.Instance?.Play(ESoundType.Upgrade);
         if (shop === this.longConveyorShop) {
             this.OnLongConveyorPurchased();
@@ -1084,6 +1096,9 @@ export class GameFlowController extends Component {
     }
 
     private UnlockConveyorAndFinalShops(): void {
+        this.SetUpgradeShopVisible(false);
+        this.SetSandInteractorVisible(false);
+        this.inventory?.SetGoldOreCapacityUnlimited(true);
         this.ShowConveyorAnimated();
         this.StartConveyorBeltAnimation();
         this.SetConveyorStorageVisible(true);
@@ -1093,6 +1108,7 @@ export class GameFlowController extends Component {
     }
 
     private ConfigureFinalShops(): void {
+        this.ResolveFinalVisualShops();
         this.ConfigureShop(this.longConveyorShop, this.longConveyorPrice);
         this.ConfigureShop(this.sellerShop, this.sellerPrice);
         this.ConfigureShop(this.finalZoneShop, this.finalZonePrice);
@@ -1100,6 +1116,37 @@ export class GameFlowController extends Component {
         this.SetVisualShopPrice(this.finalVisualShop2, this.sellerPrice);
         this.SetVisualShopPrice(this.finalVisualShop3, this.finalZonePrice);
         this.SetFinalShopInteractorsVisible(false);
+    }
+
+    private ResolveFinalVisualShops(): void {
+        this.finalVisualShop1 = this.ResolveFinalVisualShop(
+            this.finalVisualShop1,
+            this.longConveyorShop,
+            'FinalShop_1',
+        );
+        this.finalVisualShop2 = this.ResolveFinalVisualShop(
+            this.finalVisualShop2,
+            this.sellerShop,
+            'FinalShop_2',
+        );
+        this.finalVisualShop3 = this.ResolveFinalVisualShop(
+            this.finalVisualShop3,
+            this.finalZoneShop,
+            'FinalShop_3',
+        );
+    }
+
+    private ResolveFinalVisualShop(
+        configuredVisual: Node | null,
+        interactor: ShopInteractor | null,
+        fallbackName: string,
+    ): Node | null {
+        const interactorRoot = interactor?.node ?? null;
+        if (configuredVisual && configuredVisual !== interactorRoot) {
+            return configuredVisual;
+        }
+
+        return interactorRoot?.parent?.getChildByName(fallbackName) ?? configuredVisual;
     }
 
     private SetVisualShopPrice(root: Node | null, price: number): void {
@@ -1128,49 +1175,85 @@ export class GameFlowController extends Component {
         ));
     }
 
-    private OnLongConveyorPurchased(): void {
-        this.longConveyorUnlocked = true;
-        this.ShowNodeAnimated(this.longConveyorRoot);
-        this.SetConveyorStorageVisible(false);
-        this.MoveCollectedGoldToOrcStorage();
+    private ConfigureSellerVisual(): void {
+        const seller = this.sellerRoot;
+        const playerVisual = this.player?.visualRoot;
+        if (!seller || !playerVisual) {
+            return;
+        }
+
+        for (const child of seller.children) {
+            child.active = false;
+        }
+
+        const visual = instantiate(playerVisual);
+        visual.name = 'PlayerVisual';
+        const inventoryStack = visual.getChildByName('BackStackRoot');
+        if (inventoryStack) {
+            inventoryStack.active = false;
+        }
+        seller.addChild(visual);
+
+        this.sellerAnimation = seller.getComponent(PlayerAnimationController)
+            ?? seller.addComponent(PlayerAnimationController);
+        this.sellerAnimation.animation = visual.getComponentInChildren(animation.AnimationController);
+        this.sellerAnimation.SetVacuumEnabled(false);
+        this.sellerAnimation.SetMoving(false);
     }
 
-    private MoveCollectedGoldToOrcStorage(): void {
+    private OnLongConveyorPurchased(): void {
+        this.longConveyorPurchased = true;
+        this.UpdateExchangeInteractorVisualVisibility();
+        this.RefreshPriorityHint();
+        this.ShowNodeAnimated(this.longConveyorRoot);
+        this.scheduleOnce(() => {
+            this.longConveyorUnlocked = true;
+            this.MoveCollectedGoldToLongConveyor();
+            this.SetConveyorStorageVisible(false);
+        }, 0.3);
+    }
+
+    private MoveCollectedGoldToLongConveyor(): void {
         const source = this.conveyorGoldStorage;
-        const destination = this.orcGoldStorage;
-        if (!source || !destination || source.Amount <= 0) {
+        if (!source || source.Amount <= 0 || !this.goldFlyPrefab) {
             return;
         }
 
-        const amount = Math.min(source.Amount, this.GetStorageAvailableCapacity(destination));
-        if (amount <= 0 || !source.TryTake(amount)) {
-            return;
-        }
-
-        const from = source.receivePivot?.worldPosition ?? source.node.worldPosition;
-        const target = destination.receivePivot ?? destination.node;
+        const amount = source.Amount;
+        const stack = source.stackView;
+        const visibleCount = stack?.VisibleCount ?? amount;
+        const fallbackStart = source.receivePivot?.worldPosition
+            ?? stack?.root?.worldPosition
+            ?? source.node.worldPosition;
+        const startPositions: Vec3[] = [];
         for (let i = 0; i < amount; i++) {
-            const launch = () => {
-                const onArrived = () => destination.Receive(EItemType.GoldOre, 1);
-                const flyingItem = this.flyService && this.goldFlyPrefab
-                    ? this.flyService.FlyPrefabToNode(
-                        this.goldFlyPrefab,
-                        from.clone(),
-                        target,
-                        onArrived,
-                        0.35 + i * 0.02,
-                    )
-                    : null;
-                if (!flyingItem) {
-                    onArrived();
-                }
-            };
-            const delay = i * Math.max(0, this.transferItemStaggerDelay);
+            startPositions.push(
+                stack?.GetItemWorldPosition(Math.max(0, visibleCount - 1 - i))
+                    ?? fallbackStart.clone(),
+            );
+        }
+
+        if (!source.TryTake(amount)) {
+            return;
+        }
+
+        const firstLongPathIndex = this.GetShortConveyorPath().length;
+        const staggerDelay = Math.max(0, this.transferItemStaggerDelay);
+        for (let i = 0; i < amount; i++) {
+            const launch = () => this.SpawnConveyorGoldAt(
+                startPositions[i] ?? fallbackStart,
+                firstLongPathIndex,
+            );
+            const delay = i * staggerDelay;
             delay > 0 ? this.scheduleOnce(launch, delay) : launch();
         }
     }
 
     private OnSellerPurchased(): void {
+        this.sellerPurchased = true;
+        this.UpdateExchangeInteractorVisualVisibility();
+        this.RefreshPriorityHint();
+
         const seller = this.sellerRoot;
         if (!seller) {
             this.sellerUnlocked = true;
@@ -1178,7 +1261,7 @@ export class GameFlowController extends Component {
             return;
         }
 
-        const spawnPosition = this.sellerShop?.node.worldPosition ?? seller.worldPosition;
+        const spawnPosition = seller.worldPosition;
         const target = this.sellerMoveTarget ?? this.exchangeInteractor?.node ?? null;
         const targetScale = seller.scale.clone();
         seller.setWorldPosition(spawnPosition);
@@ -1199,9 +1282,11 @@ export class GameFlowController extends Component {
             return;
         }
 
-        const animation = seller.getComponentInChildren(PlayerAnimationController);
+        const animation = this.sellerAnimation
+            ?? seller.getComponentInChildren(PlayerAnimationController);
         animation?.SetMoving(true);
-        const targetPosition = target.worldPosition.clone();
+        let targetPosition = target.worldPosition.clone();
+        targetPosition.y = seller.worldPosition.y;
         const directionX = targetPosition.x - seller.worldPosition.x;
         const directionZ = targetPosition.z - seller.worldPosition.z;
         if (directionX * directionX + directionZ * directionZ > 0.0001) {
@@ -1393,41 +1478,69 @@ export class GameFlowController extends Component {
             return;
         }
 
+        const startPosition = this.conveyorSpawnPoint.worldPosition.clone();
+        startPosition.y += Number.isFinite(this.conveyorItemHeight) ? this.conveyorItemHeight : 1.25;
+        this.SpawnConveyorGoldAt(startPosition, 0);
+    }
+
+    private SpawnConveyorGoldAt(worldPosition: Vec3, pathIndex: number): void {
         const root = this.flyService?.flyRoot ?? this.conveyorRoot;
-        if (!root) {
+        if (!root || !this.goldFlyPrefab) {
             return;
         }
 
         const item = instantiate(this.goldFlyPrefab);
         root.addChild(item);
-
-        const startPosition = this.conveyorSpawnPoint.worldPosition.clone();
-        startPosition.y += Number.isFinite(this.conveyorItemHeight) ? this.conveyorItemHeight : 1.25;
-        item.setWorldPosition(startPosition);
-        this.conveyorItems.push({ node: item, pathIndex: 0 });
+        item.setWorldPosition(worldPosition);
+        this.conveyorItems.push({
+            node: item,
+            pathIndex: Math.max(0, Math.floor(pathIndex)),
+        });
     }
 
     private GetActiveConveyorPath(): Node[] {
-        const configuredShortPath = this.shortConveyorPath.filter((node) => !!node?.isValid);
-        const fallbackShortEnd = this.conveyorRoot?.getChildByName('ShortConveyorEnd') ?? null;
-        const path = configuredShortPath.length > 0
-            ? configuredShortPath
-            : fallbackShortEnd ? [fallbackShortEnd] : [];
+        const path = this.GetShortConveyorPath();
         if (this.longConveyorUnlocked) {
-            const configuredLongPath = this.longConveyorPath.filter((node) => !!node?.isValid);
-            if (configuredLongPath.length > 0) {
-                path.push(...configuredLongPath);
-            } else {
-                const root = this.longConveyorRoot;
-                for (const name of ['LongConveyorPoint_1', 'LongConveyorPoint_2', 'LongConveyorEnd']) {
-                    const point = root?.getChildByName(name);
-                    if (point) {
-                        path.push(point);
-                    }
-                }
-            }
+            path.push(...this.GetLongConveyorPath());
         }
         return path;
+    }
+
+    private GetShortConveyorPath(): Node[] {
+        const configuredShortPath = this.shortConveyorPath.filter((node) => !!node?.isValid);
+        const fallbackShortEnd = this.conveyorRoot?.getChildByName('ShortConveyorEnd') ?? null;
+        return configuredShortPath.length > 0
+            ? configuredShortPath
+            : fallbackShortEnd ? [fallbackShortEnd] : [];
+    }
+
+    private GetLongConveyorPath(): Node[] {
+        const configuredPath = this.longConveyorPath.filter((node) => !!node?.isValid);
+        const root = this.longConveyorRoot;
+        if (!root) {
+            return configuredPath;
+        }
+
+        const namedPoints = root.children
+            .filter((node) => /^LongConveyorPoint_\d+$/.test(node.name))
+            .sort((a, b) => this.GetConveyorPointIndex(a) - this.GetConveyorPointIndex(b));
+        const end = root.getChildByName('LongConveyorEnd');
+        const path = namedPoints.length > 0 ? namedPoints : [...configuredPath];
+
+        for (const configuredPoint of configuredPath) {
+            if (configuredPoint !== end && !path.includes(configuredPoint)) {
+                path.push(configuredPoint);
+            }
+        }
+        if (end && !path.includes(end)) {
+            path.push(end);
+        }
+        return path;
+    }
+
+    private GetConveyorPointIndex(node: Node): number {
+        const match = /_(\d+)$/.exec(node.name);
+        return match ? Number.parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
     }
 
     private TryDeliverConveyorGold(
@@ -1521,6 +1634,49 @@ export class GameFlowController extends Component {
         root.active = value;
     }
 
+    private SetSandInteractorVisible(value: boolean): void {
+        if (this.sandInteractor) {
+            this.sandInteractor.node.active = value;
+        }
+    }
+
+    private SetExchangeInteractorVisualsVisible(value: boolean): void {
+        const root = this.exchangeInteractor?.node;
+        if (!root) {
+            return;
+        }
+
+        for (const childName of ['Back', 'Sprite']) {
+            const child = root.getChildByName(childName);
+            if (child) {
+                child.active = value;
+            }
+        }
+    }
+
+    private UpdateExchangeInteractorVisualVisibility(): void {
+        this.SetExchangeInteractorVisualsVisible(
+            !(this.sellerPurchased && this.longConveyorPurchased),
+        );
+    }
+
+    private HidePurchasedFinalShop(shop: ShopInteractor): void {
+        let visual: Node | null = null;
+        if (shop === this.longConveyorShop) {
+            visual = this.finalVisualShop1;
+        } else if (shop === this.sellerShop) {
+            visual = this.finalVisualShop2;
+        } else if (shop === this.finalZoneShop) {
+            visual = this.finalVisualShop3;
+        }
+
+        if (visual) {
+            Tween.stopAllByTarget(visual);
+            visual.active = false;
+        }
+        shop.node.active = false;
+    }
+
     private RevealUpgradeShop(): void {
         const root = this.upgradeShop?.node;
         if (!root || root.active) {
@@ -1537,17 +1693,39 @@ export class GameFlowController extends Component {
     }
 
     private SetFinalShopInteractorsVisible(value: boolean): void {
-        for (const shop of [this.longConveyorShop, this.sellerShop, this.finalZoneShop]) {
+        const shops: Array<[ShopInteractor | null, Node | null]> = [
+            [this.longConveyorShop, this.finalVisualShop1],
+            [this.sellerShop, this.finalVisualShop2],
+            [this.finalZoneShop, this.finalVisualShop3],
+        ];
+        for (const [shop, externalVisual] of shops) {
             if (shop) {
+                this.SetEmbeddedShopVisualsVisible(shop, !externalVisual || externalVisual === shop.node);
                 shop.node.active = value;
+            }
+        }
+    }
+
+    private SetEmbeddedShopVisualsVisible(shop: ShopInteractor, value: boolean): void {
+        for (const childName of ['Back', 'Sprite', 'Icon', 'Price']) {
+            const child = shop.node.getChildByName(childName);
+            if (child) {
+                child.active = value;
             }
         }
     }
 
     private SetFinalVisualShopsVisible(value: boolean): void {
         for (const shop of [this.finalVisualShop1, this.finalVisualShop2, this.finalVisualShop3]) {
-            if (shop) {
-                shop.active = value;
+            if (!shop) {
+                continue;
+            }
+
+            Tween.stopAllByTarget(shop);
+            if (value) {
+                this.ShowNodeAnimated(shop);
+            } else {
+                shop.active = false;
             }
         }
     }

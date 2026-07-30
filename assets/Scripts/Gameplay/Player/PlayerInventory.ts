@@ -26,6 +26,7 @@ export class PlayerInventory extends Component {
     private readonly counts: number[] = [0, 0, 0];
     private readonly reservedCounts: number[] = [0, 0, 0];
     private goldOreCapacity: number = PlayerInventory.GOLD_ORE_CAPACITIES[0];
+    private unlimitedGoldOreCapacity: boolean = false;
     private sceneCamera: Camera | null = null;
 
     public GetCount(itemType: EItemType): number {
@@ -53,6 +54,11 @@ export class PlayerInventory extends Component {
         const safeLevel = Number.isFinite(upgradeLevel) ? Math.floor(upgradeLevel) : 0;
         const capacityIndex = Math.max(0, Math.min(PlayerInventory.GOLD_ORE_CAPACITIES.length - 1, safeLevel));
         this.goldOreCapacity = PlayerInventory.GOLD_ORE_CAPACITIES[capacityIndex];
+        this.RefreshMaxGoldIndicator();
+    }
+
+    public SetGoldOreCapacityUnlimited(value: boolean = true): void {
+        this.unlimitedGoldOreCapacity = value;
         this.RefreshMaxGoldIndicator();
     }
 
@@ -137,6 +143,9 @@ export class PlayerInventory extends Component {
         if (itemType !== EItemType.GoldOre) {
             return Number.MAX_SAFE_INTEGER;
         }
+        if (this.unlimitedGoldOreCapacity) {
+            return Number.MAX_SAFE_INTEGER;
+        }
 
         return Math.max(0, this.goldOreCapacity - this.GetCount(itemType) - this.GetReservedCount(itemType));
     }
@@ -178,7 +187,8 @@ export class PlayerInventory extends Component {
 
     private RefreshMaxGoldIndicator(): void {
         if (this.maxGoldIndicator) {
-            this.maxGoldIndicator.active = this.GetCount(EItemType.GoldOre) >= this.goldOreCapacity;
+            this.maxGoldIndicator.active = !this.unlimitedGoldOreCapacity
+                && this.GetCount(EItemType.GoldOre) >= this.goldOreCapacity;
         }
     }
 }
