@@ -168,6 +168,9 @@ export class GameFlowController extends Component {
     @property({ type: CCInteger })
     public goldPerExchange: number = 4;
 
+    @property({ type: [CCInteger], tooltip: 'Prices of consecutive vacuum upgrade shop purchases.' })
+    public vacuumUpgradePrices: number[] = [10, 20, 40];
+
     @property({ type: CCInteger, min: 1 })
     public longConveyorPrice: number = 15;
 
@@ -191,6 +194,15 @@ export class GameFlowController extends Component {
 
     @property({ type: CCFloat, min: 0, tooltip: 'Delay between consecutive gold and storage-money flight starts.' })
     public transferItemStaggerDelay: number = 0.09;
+
+    @property({ type: CCFloat, min: 0.1, tooltip: 'Seconds for the first-money camera move to the upgrade shop.' })
+    public upgradeShopCameraMoveDuration: number = 0.8;
+
+    @property({ type: CCFloat, min: 0, tooltip: 'Seconds to hold on the newly appeared upgrade shop.' })
+    public upgradeShopCameraHoldDuration: number = 0.8;
+
+    @property({ type: CCFloat, min: 0.1, tooltip: 'Seconds for the camera return from the upgrade shop to the player.' })
+    public upgradeShopCameraReturnDuration: number = 0.8;
 
     @property({ type: CCFloat, min: 0.1, tooltip: 'Seconds between automatic gold bars on the unlocked conveyor.' })
     public conveyorSpawnInterval: number = 1.25;
@@ -228,6 +240,10 @@ export class GameFlowController extends Component {
     private readonly conveyorMoveDelta: Vec3 = new Vec3();
     private conveyorBeltMaterial: Material | null = null;
     private readonly conveyorBeltTilingOffset: Vec4 = new Vec4();
+    private upgradeShopRevealSequenceStarted: boolean = false;
+    private upgradeShopRevealSequenceInProgress: boolean = false;
+    private movementEnabledBeforeShopReveal: boolean = true;
+    private joystickEnabledBeforeShopReveal: boolean = true;
 
     protected start(): void {
         if (this.orcGoldStorage) {
@@ -238,6 +254,7 @@ export class GameFlowController extends Component {
         }
         this.SetMoneyStorageVisible(false);
         this.SetUpgradeShopVisible(false);
+        this.ConfigureUpgradeShopPrice();
         this.ConfigureFinalShops();
         this.BindEvents();
         this.SyncUpgradeProgression();
@@ -361,7 +378,11 @@ export class GameFlowController extends Component {
             return;
         }
 
-        if (this.state === EGameFlowState.AwaitFinalTap || this.state === EGameFlowState.Packshot) {
+        if (
+            this.upgradeShopRevealSequenceInProgress
+            || this.state === EGameFlowState.AwaitFinalTap
+            || this.state === EGameFlowState.Packshot
+        ) {
             this.hints.Hide();
             return;
         }
@@ -900,8 +921,47 @@ export class GameFlowController extends Component {
             itemType === EItemType.Money
             && (this.inventory?.GetCount(EItemType.Money) ?? 0) > 0
         ) {
-            this.RevealUpgradeShop();
+            this.StartUpgradeShopRevealSequence();
         }
+        this.RefreshPriorityHint();
+    }
+
+    private StartUpgradeShopRevealSequence(): void {
+        const shopRoot = this.upgradeShop?.node;
+        if (!shopRoot || shopRoot.active || this.upgradeShopRevealSequenceStarted) {
+            return;
+        }
+
+        this.upgradeShopRevealSequenceStarted = true;
+        this.upgradeShopRevealSequenceInProgress = true;
+        this.movementEnabledBeforeShopReveal = this.player?.IsMovementEnabled ?? true;
+        this.joystickEnabledBeforeShopReveal = this.player?.joystick?.IsInputEnabled ?? true;
+        this.player?.SetMovementEnabled(false);
+        this.player?.joystick?.SetInputEnabled(false);
+        this.hints?.Hide();
+
+        const cameraFollower = this.player?.cameraFollower;
+        if (!cameraFollower) {
+            this.RevealUpgradeShop();
+            this.FinishUpgradeShopRevealSequence();
+            return;
+        }
+
+        cameraFollower.PlayFocusSequence(
+            shopRoot,
+            this.upgradeShopCameraMoveDuration,
+            this.upgradeShopCameraHoldDuration,
+            this.upgradeShopCameraReturnDuration,
+            () => this.RevealUpgradeShop(),
+            () => this.FinishUpgradeShopRevealSequence(),
+        );
+    }
+
+    private FinishUpgradeShopRevealSequence(): void {
+        this.RevealUpgradeShop();
+        this.player?.SetMovementEnabled(this.movementEnabledBeforeShopReveal);
+        this.player?.joystick?.SetInputEnabled(this.joystickEnabledBeforeShopReveal);
+        this.upgradeShopRevealSequenceInProgress = false;
         this.RefreshPriorityHint();
     }
 
@@ -965,7 +1025,7 @@ export class GameFlowController extends Component {
             ? this.goldFlyPrefab
             : this.moneyFlyPrefab;
         const flyingItem = this.flyService && paymentPrefab
-            ? this.flyService.FlyPrefabToNode(paymentPrefab, start.clone(), target, onItemArrived, 0.15)
+            ? this.flyService.FlyPrefabToNode(paymentPrefab, start.clone(), target, onItemArrived, 0.1)
             : null;
 
         if (!flyingItem) {
@@ -1001,6 +1061,7 @@ export class GameFlowController extends Component {
             }
             this.SyncUpgradeProgression();
             this.upgradeShop?.ResetShop();
+            this.ConfigureUpgradeShopPrice();
             this.SetState(EGameFlowState.GoToSand);
             return;
         }
@@ -1013,6 +1074,13 @@ export class GameFlowController extends Component {
         const upgradeLevel = this.vacuum?.UpgradeLevel ?? 0;
         this.inventory?.SetGoldOreCapacityForUpgradeLevel(upgradeLevel);
         this.sandField?.SetOreCountForUpgradeLevel(upgradeLevel);
+    }
+
+    private ConfigureUpgradeShopPrice(): void {
+        const prices = this.vacuumUpgradePrices;
+        const priceIndex = Math.min(this.upgradePurchases, Math.max(0, prices.length - 1));
+        const price = prices[priceIndex] ?? 10;
+        this.upgradeShop?.ConfigurePrice(EItemType.Money, price);
     }
 
     private UnlockConveyorAndFinalShops(): void {

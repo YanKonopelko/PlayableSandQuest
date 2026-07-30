@@ -1861,7 +1861,7 @@
       "__id__": 17
     },
     "requiredGold": 10,
-    "moveSpeed": 4,
+    "moveSpeed": 6,
     "rageAtlas": {
       "__uuid__": "fb3e96f6-699f-46c2-a6ef-bb20bbea4e25@f9941",
       "__expectedType__": "cc.SpriteFrame"

@@ -80,6 +80,10 @@ export class PlayerController extends Component {
     private nextStepType: ESoundType = ESoundType.Step1;
     private sceneCamera: Camera | null = null;
 
+    public get IsMovementEnabled(): boolean {
+        return this.movementEnabled;
+    }
+
     protected onLoad(): void {
         RequiredReference.Check(this, this.joystick, 'joystick');
         RequiredReference.Check(this, this.movementCollider, 'movementCollider');

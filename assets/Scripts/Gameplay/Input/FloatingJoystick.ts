@@ -44,6 +44,10 @@ export class FloatingJoystick extends Component {
         return this.isPressed;
     }
 
+    public get IsInputEnabled(): boolean {
+        return this.inputEnabled;
+    }
+
     protected onLoad(): void {
         RequiredReference.CheckNode(this, this.baseNode, 'baseNode');
         RequiredReference.CheckNode(this, this.handleNode, 'handleNode');
@@ -154,6 +158,25 @@ export class FloatingJoystick extends Component {
         this.unschedule(this.ShowIdleTutorial);
         this.SetVisible(false);
         this.ShowTutorial(HORIZONTAL_JOYSTICK_TUTORIAL_CLIP);
+    }
+
+    public SetInputEnabled(value: boolean): void {
+        if (this.finalTutorialShown && value) {
+            return;
+        }
+
+        this.inputEnabled = value;
+        if (value) {
+            this.ScheduleIdleTutorial();
+            return;
+        }
+
+        this.pointerId = -1;
+        this.isPressed = false;
+        this.direction.set(0, 0);
+        this.unschedule(this.ShowIdleTutorial);
+        this.SetVisible(false);
+        this.HideTutorial();
     }
 
     private ScheduleIdleTutorial(): void {
