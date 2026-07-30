@@ -7,7 +7,7 @@ const { ccclass, property } = _decorator;
 
 @ccclass('PlayerInventory')
 export class PlayerInventory extends Component {
-    private static readonly GOLD_ORE_CAPACITIES: readonly number[] = [12, 16, 20];
+    private static readonly GOLD_ORE_CAPACITIES: readonly number[] = [10, 20, 30];
 
     @property(ItemStackView)
     public goldOreStack: ItemStackView | null = null;

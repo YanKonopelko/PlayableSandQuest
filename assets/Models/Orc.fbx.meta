@@ -2,15 +2,18 @@
   "ver": "2.3.14",
   "importer": "fbx",
   "imported": true,
-  "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c",
+  "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61",
   "files": [
     "__original-animation-0.bin",
-    "__original-animation-1.bin"
+    "__original-animation-1.bin",
+    "__original-animation-2.bin",
+    "__original-animation-3.bin",
+    "__original-animation-4.bin"
   ],
   "subMetas": {
     "29478": {
       "importer": "gltf-material",
-      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@29478",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@29478",
       "displayName": "",
       "id": "29478",
       "name": "ORCLIME.material",
@@ -26,7 +29,7 @@
     },
     "08389": {
       "importer": "gltf-mesh",
-      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@08389",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@08389",
       "displayName": "",
       "id": "08389",
       "name": "Walking__6_.mesh",
@@ -42,19 +45,19 @@
       ],
       "subMetas": {}
     },
-    "88ba0": {
+    "6bab5": {
       "importer": "gltf-animation",
-      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@88ba0",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@6bab5",
       "displayName": "",
-      "id": "88ba0",
-      "name": "ц.animation",
+      "id": "6bab5",
+      "name": "Orc_Walk_P.animation",
       "userData": {
         "gltfIndex": 0,
         "wrapMode": 2,
         "sample": 30,
         "span": {
           "from": 0,
-          "to": 0.7333333492279053
+          "to": 0.9666666388511658
         },
         "events": []
       },
@@ -65,19 +68,88 @@
       ],
       "subMetas": {}
     },
-    "a481c": {
+    "25ac2": {
       "importer": "gltf-animation",
-      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@a481c",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@25ac2",
       "displayName": "",
-      "id": "a481c",
-      "name": "run.animation",
+      "id": "25ac2",
+      "name": "Orc_Idle.animation",
       "userData": {
         "gltfIndex": 1,
         "wrapMode": 2,
         "sample": 30,
         "span": {
           "from": 0,
-          "to": 1
+          "to": 1.9666666984558105
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
+    "27c99": {
+      "importer": "gltf-animation",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@27c99",
+      "displayName": "",
+      "id": "27c99",
+      "name": "Orc_Run.animation",
+      "userData": {
+        "gltfIndex": 2,
+        "wrapMode": 2,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 0.699999988079071
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
+    "29fa3": {
+      "importer": "gltf-animation",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@29fa3",
+      "displayName": "",
+      "id": "29fa3",
+      "name": "Orc_Walk_W.animation",
+      "userData": {
+        "gltfIndex": 3,
+        "wrapMode": 2,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 0.9666666388511658
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
+    "a84ce": {
+      "importer": "gltf-animation",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@a84ce",
+      "displayName": "",
+      "id": "a84ce",
+      "name": "Orc_Idle_P.animation",
+      "userData": {
+        "gltfIndex": 4,
+        "wrapMode": 2,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 2.0999999046325684
         },
         "events": []
       },
@@ -90,7 +162,7 @@
     },
     "438fe": {
       "importer": "gltf-skeleton",
-      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@438fe",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@438fe",
       "displayName": "",
       "id": "438fe",
       "name": "UnnamedSkeleton.skeleton",
@@ -105,11 +177,11 @@
       ],
       "subMetas": {}
     },
-    "8cf93": {
+    "011d6": {
       "importer": "gltf-scene",
-      "uuid": "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@8cf93",
+      "uuid": "e8afb130-e878-4d7e-8c51-a75749750c61@011d6",
       "displayName": "",
-      "id": "8cf93",
+      "id": "011d6",
       "name": "Orc.prefab",
       "userData": {
         "gltfIndex": 0
@@ -129,30 +201,72 @@
     },
     "animationImportSettings": [
       {
-        "name": "Running_Unreal_Take",
-        "duration": 0.7333333492279053,
+        "name": "Orc_Walk_P",
+        "duration": 0.9666666388511658,
         "fps": 30,
         "splits": [
           {
-            "name": "ц",
+            "name": "Orc_Walk_P",
             "from": 0,
-            "to": 0.7333333492279053,
+            "to": 0.9666666388511658,
             "wrapMode": 2,
-            "previousId": "88ba0"
+            "previousId": "6bab5"
           }
         ]
       },
       {
-        "name": "Wheelbarrow_Walk_Unreal_Take",
-        "duration": 1,
+        "name": "Orc_Idle",
+        "duration": 1.9666666984558105,
         "fps": 30,
         "splits": [
           {
-            "name": "run",
+            "name": "Orc_Idle",
             "from": 0,
-            "to": 1,
+            "to": 1.9666666984558105,
             "wrapMode": 2,
-            "previousId": "a481c"
+            "previousId": "25ac2"
+          }
+        ]
+      },
+      {
+        "name": "Orc_Run",
+        "duration": 0.699999988079071,
+        "fps": 30,
+        "splits": [
+          {
+            "name": "Orc_Run",
+            "from": 0,
+            "to": 0.699999988079071,
+            "wrapMode": 2,
+            "previousId": "27c99"
+          }
+        ]
+      },
+      {
+        "name": "Orc_Walk_W",
+        "duration": 0.9666666388511658,
+        "fps": 30,
+        "splits": [
+          {
+            "name": "Orc_Walk_W",
+            "from": 0,
+            "to": 0.9666666388511658,
+            "wrapMode": 2,
+            "previousId": "29fa3"
+          }
+        ]
+      },
+      {
+        "name": "Orc_Idle_P",
+        "duration": 2.0999999046325684,
+        "fps": 30,
+        "splits": [
+          {
+            "name": "Orc_Idle_P",
+            "from": 0,
+            "to": 2.0999999046325684,
+            "wrapMode": 2,
+            "previousId": "a84ce"
           }
         ]
       }
@@ -177,21 +291,21 @@
     },
     "assetFinder": {
       "meshes": [
-        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@08389"
+        "e8afb130-e878-4d7e-8c51-a75749750c61@08389"
       ],
       "skeletons": [
-        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@438fe"
+        "e8afb130-e878-4d7e-8c51-a75749750c61@438fe"
       ],
       "textures": [],
       "materials": [
-        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@29478"
+        "e8afb130-e878-4d7e-8c51-a75749750c61@29478"
       ],
       "scenes": [
-        "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@8cf93"
+        "e8afb130-e878-4d7e-8c51-a75749750c61@011d6"
       ]
     },
     "materials": {
-      "6a932f1a-8039-4114-9ac0-1b6dd0261a8c@29478": {
+      "e8afb130-e878-4d7e-8c51-a75749750c61@29478": {
         "__type__": "cc.Material",
         "_name": "",
         "_objFlags": 0,
@@ -249,19 +363,6 @@
           {}
         ]
       }
-    },
-    "meshCompress": {
-      "enable": true,
-      "compress": true,
-      "quantize": false,
-      "encode": false
-    },
-    "meshSimplify": {
-      "enable": true,
-      "targetRatio": 0.35
-    },
-    "meshOptimize": {
-      "enable": true
     }
   }
 }

@@ -237,9 +237,10 @@ export class GameFlowController extends Component {
             this.conveyorGoldStorage.acceptedItem = EItemType.GoldOre;
         }
         this.SetMoneyStorageVisible(false);
+        this.SetUpgradeShopVisible(false);
         this.ConfigureFinalShops();
         this.BindEvents();
-        this.SyncGoldOreCapacity();
+        this.SyncUpgradeProgression();
         this.SetConveyorVisible(false);
         this.SetLongConveyorVisible(false);
         this.SetConveyorStorageVisible(false);
@@ -894,7 +895,13 @@ export class GameFlowController extends Component {
         this.RefreshPriorityHint();
     }
 
-    private OnInventoryAmountChanged(_itemType: EItemType): void {
+    private OnInventoryAmountChanged(itemType: EItemType): void {
+        if (
+            itemType === EItemType.Money
+            && (this.inventory?.GetCount(EItemType.Money) ?? 0) > 0
+        ) {
+            this.RevealUpgradeShop();
+        }
         this.RefreshPriorityHint();
     }
 
@@ -992,7 +999,7 @@ export class GameFlowController extends Component {
             if (upgraded && this.sandMachine) {
                 ParticleManager.Instance?.PlayAtNode(EParticleType.VacuumUpgrade, this.sandMachine);
             }
-            this.SyncGoldOreCapacity();
+            this.SyncUpgradeProgression();
             this.upgradeShop?.ResetShop();
             this.SetState(EGameFlowState.GoToSand);
             return;
@@ -1002,8 +1009,10 @@ export class GameFlowController extends Component {
         this.UnlockConveyorAndFinalShops();
     }
 
-    private SyncGoldOreCapacity(): void {
-        this.inventory?.SetGoldOreCapacityForUpgradeLevel(this.vacuum?.UpgradeLevel ?? 0);
+    private SyncUpgradeProgression(): void {
+        const upgradeLevel = this.vacuum?.UpgradeLevel ?? 0;
+        this.inventory?.SetGoldOreCapacityForUpgradeLevel(upgradeLevel);
+        this.sandField?.SetOreCountForUpgradeLevel(upgradeLevel);
     }
 
     private UnlockConveyorAndFinalShops(): void {
@@ -1427,6 +1436,25 @@ export class GameFlowController extends Component {
 
     private RevealMoneyStorage(): void {
         const root = this.moneyStorage?.node;
+        if (!root || root.active) {
+            return;
+        }
+
+        this.ShowNodeAnimated(root);
+    }
+
+    private SetUpgradeShopVisible(value: boolean): void {
+        const root = this.upgradeShop?.node;
+        if (!root) {
+            return;
+        }
+
+        Tween.stopAllByTarget(root);
+        root.active = value;
+    }
+
+    private RevealUpgradeShop(): void {
+        const root = this.upgradeShop?.node;
         if (!root || root.active) {
             return;
         }

@@ -11,6 +11,8 @@ const { ccclass, property } = _decorator;
 
 @ccclass('SandField')
 export class SandField extends Component {
+    private static readonly ORE_COUNTS_BY_UPGRADE_LEVEL: readonly number[] = [30, 50, 70];
+
     @property(VacuumSystem)
     public vacuumSystem: VacuumSystem | null = null;
 
@@ -104,6 +106,26 @@ export class SandField extends Component {
         this.tickTimer = 0;
         this.surface?.ResetSurface();
         this.oreBuilder?.RebuildWithNextSeed();
+    }
+
+    public SetOreCountForUpgradeLevel(upgradeLevel: number): void {
+        const builder = this.oreBuilder;
+        if (!builder) {
+            return;
+        }
+
+        const safeLevel = Number.isFinite(upgradeLevel) ? Math.floor(upgradeLevel) : 0;
+        const countIndex = Math.max(
+            0,
+            Math.min(SandField.ORE_COUNTS_BY_UPGRADE_LEVEL.length - 1, safeLevel),
+        );
+        const nextOreCount = SandField.ORE_COUNTS_BY_UPGRADE_LEVEL[countIndex];
+        if (builder.oreCount === nextOreCount) {
+            return;
+        }
+
+        builder.oreCount = nextOreCount;
+        builder.RebuildNow();
     }
 
     private OnTriggerEnter(event: ITriggerEvent): void {
