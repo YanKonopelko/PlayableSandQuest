@@ -57,6 +57,13 @@ export class ShopInteractor extends Interactor {
         return !this.purchased && this.Remaining > 0 && !!inventory && inventory.Has(this.priceItem, 1);
     }
 
+    public ConfigurePrice(itemType: EItemType, price: number): void {
+        this.priceItem = itemType;
+        this.price = Math.max(1, Math.floor(price));
+        this.paid = Math.min(this.paid, this.price);
+        this.RefreshProgress(false);
+    }
+
     public TryPayFrom(inventory: PlayerInventory, amount: number = 1): boolean {
         const acceptedAmount = Math.min(this.Remaining, Math.max(0, amount));
         if (acceptedAmount <= 0 || !inventory.TryRemove(this.priceItem, acceptedAmount)) {
