@@ -67,46 +67,6 @@
       ],
       "subMetas": {}
     },
-    "d1c23": {
-      "importer": "gltf-embeded-image",
-      "uuid": "10afb0c9-a794-4dad-9e4d-253af7474e11@d1c23",
-      "displayName": "",
-      "id": "d1c23",
-      "name": "Diffuse Texture-2.image",
-      "userData": {
-        "gltfIndex": 2,
-        "fixAlphaTransparencyArtifacts": true,
-        "hasAlpha": true,
-        "type": "texture"
-      },
-      "ver": "1.0.3",
-      "imported": true,
-      "files": [
-        ".json",
-        ".png"
-      ],
-      "subMetas": {}
-    },
-    "c00c1": {
-      "importer": "gltf-embeded-image",
-      "uuid": "10afb0c9-a794-4dad-9e4d-253af7474e11@c00c1",
-      "displayName": "",
-      "id": "c00c1",
-      "name": "Diffuse Texture-3.image",
-      "userData": {
-        "gltfIndex": 3,
-        "fixAlphaTransparencyArtifacts": true,
-        "hasAlpha": true,
-        "type": "texture"
-      },
-      "ver": "1.0.3",
-      "imported": true,
-      "files": [
-        ".json",
-        ".png"
-      ],
-      "subMetas": {}
-    },
     "3c5d2": {
       "importer": "texture",
       "uuid": "10afb0c9-a794-4dad-9e4d-253af7474e11@3c5d2",
@@ -144,53 +104,7 @@
         "mipfilter": "none",
         "anisotropy": 0,
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942"
-      },
-      "ver": "1.0.22",
-      "imported": true,
-      "files": [
-        ".json"
-      ],
-      "subMetas": {}
-    },
-    "c9b32": {
-      "importer": "texture",
-      "uuid": "10afb0c9-a794-4dad-9e4d-253af7474e11@c9b32",
-      "displayName": "",
-      "id": "c9b32",
-      "name": "Diffuse Texture-2.texture",
-      "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
-        "minfilter": "linear",
-        "magfilter": "linear",
-        "mipfilter": "none",
-        "anisotropy": 0,
-        "isUuid": true,
-        "imageUuidOrDatabaseUri": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942"
-      },
-      "ver": "1.0.22",
-      "imported": true,
-      "files": [
-        ".json"
-      ],
-      "subMetas": {}
-    },
-    "6e4dc": {
-      "importer": "texture",
-      "uuid": "10afb0c9-a794-4dad-9e4d-253af7474e11@6e4dc",
-      "displayName": "",
-      "id": "6e4dc",
-      "name": "Diffuse Texture-3.texture",
-      "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
-        "minfilter": "linear",
-        "magfilter": "linear",
-        "mipfilter": "none",
-        "anisotropy": 0,
-        "isUuid": true,
-        "imageUuidOrDatabaseUri": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942"
+        "imageUuidOrDatabaseUri": "10afb0c9-a794-4dad-9e4d-253af7474e11@c700e"
       },
       "ver": "1.0.22",
       "imported": true,
@@ -236,27 +150,15 @@
     "imageMetas": [
       {
         "name": "Diffuse Texture",
-        "remap": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942",
         "uri": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942"
       },
       {
         "name": "Diffuse Texture",
-        "remap": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942",
         "uri": "10afb0c9-a794-4dad-9e4d-253af7474e11@c700e"
-      },
-      {
-        "name": "Diffuse Texture",
-        "remap": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942",
-        "uri": "10afb0c9-a794-4dad-9e4d-253af7474e11@d1c23"
-      },
-      {
-        "name": "Diffuse Texture",
-        "remap": "10afb0c9-a794-4dad-9e4d-253af7474e11@32942",
-        "uri": "10afb0c9-a794-4dad-9e4d-253af7474e11@c00c1"
       }
     ],
     "fbx": {
-      "smartMaterialEnabled": true
+      "smartMaterialEnabled": false
     },
     "lods": {
       "enable": false,
@@ -283,9 +185,7 @@
       "skeletons": [],
       "textures": [
         "10afb0c9-a794-4dad-9e4d-253af7474e11@3c5d2",
-        "10afb0c9-a794-4dad-9e4d-253af7474e11@c45cd",
-        "10afb0c9-a794-4dad-9e4d-253af7474e11@c9b32",
-        "10afb0c9-a794-4dad-9e4d-253af7474e11@6e4dc"
+        "10afb0c9-a794-4dad-9e4d-253af7474e11@c45cd"
       ],
       "materials": [
         "10afb0c9-a794-4dad-9e4d-253af7474e11@216f0"

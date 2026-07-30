@@ -19,7 +19,7 @@
         "mipfilter": "none",
         "anisotropy": 0,
         "isUuid": false,
-        "imageUuidOrDatabaseUri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_normal.jpg"
+        "imageUuidOrDatabaseUri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_normal.webp"
       },
       "ver": "1.0.22",
       "imported": true,
@@ -75,77 +75,8 @@
         "magfilter": "linear",
         "mipfilter": "none",
         "anisotropy": 0,
-        "isUuid": false,
-        "imageUuidOrDatabaseUri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_basecolor.jpg"
-      },
-      "ver": "1.0.22",
-      "imported": true,
-      "files": [
-        ".json"
-      ],
-      "subMetas": {}
-    },
-    "d41fa": {
-      "importer": "texture",
-      "uuid": "49c7e56f-e064-4d7f-a147-4fe1534a1380@d41fa",
-      "displayName": "",
-      "id": "d41fa",
-      "name": "specular_texture.texture",
-      "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
-        "minfilter": "linear",
-        "magfilter": "linear",
-        "mipfilter": "none",
-        "anisotropy": 0,
-        "isUuid": false,
-        "imageUuidOrDatabaseUri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_metallic.jpg"
-      },
-      "ver": "1.0.22",
-      "imported": true,
-      "files": [
-        ".json"
-      ],
-      "subMetas": {}
-    },
-    "75fa1": {
-      "importer": "texture",
-      "uuid": "49c7e56f-e064-4d7f-a147-4fe1534a1380@75fa1",
-      "displayName": "",
-      "id": "75fa1",
-      "name": "roughness_texture.texture",
-      "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
-        "minfilter": "linear",
-        "magfilter": "linear",
-        "mipfilter": "none",
-        "anisotropy": 0,
-        "isUuid": false,
-        "imageUuidOrDatabaseUri": "db://assets/Models/Chainsow.fbm/assimpjs_tex_3.jpg"
-      },
-      "ver": "1.0.22",
-      "imported": true,
-      "files": [
-        ".json"
-      ],
-      "subMetas": {}
-    },
-    "d945a": {
-      "importer": "texture",
-      "uuid": "49c7e56f-e064-4d7f-a147-4fe1534a1380@d945a",
-      "displayName": "",
-      "id": "d945a",
-      "name": "metallic_texture.texture",
-      "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
-        "minfilter": "linear",
-        "magfilter": "linear",
-        "mipfilter": "none",
-        "anisotropy": 0,
-        "isUuid": false,
-        "imageUuidOrDatabaseUri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_metallic.jpg"
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "0ef0dfd1-fd93-466c-bfcc-47c0ed5b7386"
       },
       "ver": "1.0.22",
       "imported": true,
@@ -175,27 +106,16 @@
     "imageMetas": [
       {
         "name": "base_color_texture",
-        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_basecolor.jpg"
+        "remap": "0ef0dfd1-fd93-466c-bfcc-47c0ed5b7386",
+        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_basecolor.webp"
       },
       {
         "name": "normal_texture",
-        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_normal.jpg"
-      },
-      {
-        "name": "specular_texture",
-        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_metallic.jpg"
-      },
-      {
-        "name": "roughness_texture",
-        "uri": "db://assets/Models/Chainsow.fbm/assimpjs_tex_3.jpg"
-      },
-      {
-        "name": "metallic_texture",
-        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_metallic.jpg"
+        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_normal.webp"
       }
     ],
     "fbx": {
-      "smartMaterialEnabled": true
+      "smartMaterialEnabled": false
     },
     "lods": {
       "enable": false,
@@ -222,10 +142,7 @@
       "skeletons": [],
       "textures": [
         "49c7e56f-e064-4d7f-a147-4fe1534a1380@7d6ab",
-        "49c7e56f-e064-4d7f-a147-4fe1534a1380@30201",
-        "49c7e56f-e064-4d7f-a147-4fe1534a1380@d41fa",
-        "49c7e56f-e064-4d7f-a147-4fe1534a1380@75fa1",
-        "49c7e56f-e064-4d7f-a147-4fe1534a1380@d945a"
+        "49c7e56f-e064-4d7f-a147-4fe1534a1380@30201"
       ],
       "materials": [
         "49c7e56f-e064-4d7f-a147-4fe1534a1380@c8902"
@@ -285,7 +202,7 @@
         "_props": [
           {
             "mainTexture": {
-              "__uuid__": "49c7e56f-e064-4d7f-a147-4fe1534a1380@7d6ab",
+              "__uuid__": "11064173-b0c1-43df-bafb-2e71f584657a@6c48a",
               "__expectedType__": "cc.Texture2D"
             },
             "mainColor": {
@@ -300,6 +217,18 @@
           {}
         ]
       }
+    },
+    "meshOptimize": {
+      "enable": true
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true,
+      "quantize": true
+    },
+    "meshSimplify": {
+      "enable": true,
+      "targetRatio": 0.4
     }
   }
 }
