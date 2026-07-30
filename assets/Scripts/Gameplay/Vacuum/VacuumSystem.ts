@@ -42,6 +42,15 @@ export class VacuumSystem extends Component {
     @property(Material)
     public normalHoseMaterial: Material | null = null;
 
+    @property({ type: Material, tooltip: 'TubePart material before upgrades.' })
+    public tubePartLevel0Material: Material | null = null;
+
+    @property({ type: Material, tooltip: 'TubePart material after the first upgrade.' })
+    public tubePartLevel1Material: Material | null = null;
+
+    @property({ type: Material, tooltip: 'TubePart material after the second upgrade.' })
+    public tubePartLevel2Material: Material | null = null;
+
     @property(Material)
     public warningHoseMaterial: Material | null = null;
 
@@ -221,6 +230,7 @@ export class VacuumSystem extends Component {
         }
 
         this.upgradeLevel++;
+        this.ApplyVacuumMaterials(false);
         tween(this.node)
             .to(0.12, { scale: new Vec3(1.08, 1.08, 1.08) })
             .to(0.12, { scale: Vec3.ONE })
@@ -731,7 +741,9 @@ export class VacuumSystem extends Component {
             this.tubeParts.push(part);
             this.ApplyMaterial(
                 part,
-                this.warning && this.warningBlinkState ? this.warningHoseMaterial : this.normalHoseMaterial,
+                this.warning && this.warningBlinkState
+                    ? this.warningHoseMaterial
+                    : this.GetUpgradeHoseMaterial(),
             );
         }
 
@@ -768,7 +780,9 @@ export class VacuumSystem extends Component {
     }
 
     private ApplyVacuumMaterials(useWarningMaterials: boolean): void {
-        const hoseMaterial = useWarningMaterials ? this.warningHoseMaterial : this.normalHoseMaterial;
+        const hoseMaterial = useWarningMaterials
+            ? this.warningHoseMaterial
+            : this.GetUpgradeHoseMaterial();
         for (const part of this.tubeParts) {
             this.ApplyMaterial(part, hoseMaterial);
         }
@@ -776,6 +790,22 @@ export class VacuumSystem extends Component {
         if (this.tubeHead) {
             const headMaterial = useWarningMaterials ? this.warningHeadMaterial : this.normalHeadMaterial;
             this.ApplyMaterial(this.tubeHead, headMaterial);
+        }
+    }
+
+    private GetUpgradeHoseMaterial(): Material | null {
+        switch (this.upgradeLevel) {
+            case 1:
+                return this.tubePartLevel1Material
+                    ?? this.tubePartLevel0Material
+                    ?? this.normalHoseMaterial;
+            case 2:
+                return this.tubePartLevel2Material
+                    ?? this.tubePartLevel1Material
+                    ?? this.tubePartLevel0Material
+                    ?? this.normalHoseMaterial;
+            default:
+                return this.tubePartLevel0Material ?? this.normalHoseMaterial;
         }
     }
 

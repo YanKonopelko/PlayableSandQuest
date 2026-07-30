@@ -1,0 +1,155 @@
+{
+    "__type__":  "cc.Material",
+    "_name":  "TubePart_Level1",
+    "_objFlags":  0,
+    "__editorExtras__":  {
+
+                         },
+    "_native":  "",
+    "_effectAsset":  {
+                         "__uuid__":  "c8f66d17-351a-48da-a12c-0212d28575c4",
+                         "__expectedType__":  "cc.EffectAsset"
+                     },
+    "_techIdx":  0,
+    "_defines":  [
+                     {
+
+                     },
+                     {
+
+                     },
+                     {
+
+                     },
+                     {
+
+                     },
+                     {
+
+                     },
+                     {
+
+                     }
+                 ],
+    "_states":  [
+                    {
+                        "rasterizerState":  {
+
+                                            },
+                        "depthStencilState":  {
+
+                                              },
+                        "blendState":  {
+                                           "targets":  [
+                                                           {
+
+                                                           }
+                                                       ]
+                                       }
+                    },
+                    {
+                        "rasterizerState":  {
+
+                                            },
+                        "depthStencilState":  {
+
+                                              },
+                        "blendState":  {
+                                           "targets":  [
+                                                           {
+
+                                                           }
+                                                       ]
+                                       }
+                    },
+                    {
+                        "rasterizerState":  {
+
+                                            },
+                        "depthStencilState":  {
+
+                                              },
+                        "blendState":  {
+                                           "targets":  [
+                                                           {
+
+                                                           }
+                                                       ]
+                                       }
+                    },
+                    {
+                        "rasterizerState":  {
+
+                                            },
+                        "depthStencilState":  {
+
+                                              },
+                        "blendState":  {
+                                           "targets":  [
+                                                           {
+
+                                                           }
+                                                       ]
+                                       }
+                    },
+                    {
+                        "rasterizerState":  {
+
+                                            },
+                        "depthStencilState":  {
+
+                                              },
+                        "blendState":  {
+                                           "targets":  [
+                                                           {
+
+                                                           }
+                                                       ]
+                                       }
+                    },
+                    {
+                        "rasterizerState":  {
+
+                                            },
+                        "depthStencilState":  {
+
+                                              },
+                        "blendState":  {
+                                           "targets":  [
+                                                           {
+
+                                                           }
+                                                       ]
+                                       }
+                    }
+                ],
+    "_props":  [
+                   {
+                       "mainColor":  {
+                                         "__type__":  "cc.Color",
+                                         "r":  61,
+                                         "g":  142,
+                                         "b":  191,
+                                         "a":  255
+                                     },
+                       "occlusion":  0.145,
+                       "roughness":  0.502,
+                       "metallic":  0.132
+                   },
+                   {
+
+                   },
+                   {
+
+                   },
+                   {
+
+                   },
+                   {
+
+                   },
+                   {
+
+                   }
+               ]
+}

@@ -102,8 +102,6 @@ export class UiCurrencyCounter extends Component {
 
         if (!this.revealed && nextAmount > 0) {
             this.Reveal();
-        } else if (this.revealed) {
-            this.PlayRootPulse();
         }
     }
 
@@ -130,25 +128,6 @@ export class UiCurrencyCounter extends Component {
                 { scale: this.visualBaseScale.clone() },
                 { easing: 'backOut' },
             )
-            .start();
-    }
-
-    private PlayRootPulse(): void {
-        const root = this.visualRoot;
-        if (!root?.activeInHierarchy) {
-            return;
-        }
-
-        const pulseScale = new Vec3(
-            this.visualBaseScale.x * Math.max(1, this.changePulseScale),
-            this.visualBaseScale.y * Math.max(1, this.changePulseScale),
-            this.visualBaseScale.z * Math.max(1, this.changePulseScale),
-        );
-        const halfDuration = Math.max(0.01, this.changePulseDuration) * 0.5;
-        Tween.stopAllByTarget(root);
-        tween(root)
-            .to(halfDuration, { scale: pulseScale }, { easing: 'sineOut' })
-            .to(halfDuration, { scale: this.visualBaseScale.clone() }, { easing: 'sineIn' })
             .start();
     }
 

@@ -213,7 +213,6 @@ export class GameFlowController extends Component {
     private upgradePurchases: number = 0;
     private state: EGameFlowState = EGameFlowState.GoToSand;
     private exchangeInProgress: boolean = false;
-    private exchangeVisitDeposited: boolean = false;
     private storageTransferInProgress: boolean = false;
     private conveyorStorageTransferInProgress: boolean = false;
     private shopTransfer: ShopInteractor | null = null;
@@ -237,6 +236,7 @@ export class GameFlowController extends Component {
         if (this.conveyorGoldStorage) {
             this.conveyorGoldStorage.acceptedItem = EItemType.GoldOre;
         }
+        this.SetMoneyStorageVisible(false);
         this.ConfigureFinalShops();
         this.BindEvents();
         this.SyncGoldOreCapacity();
@@ -453,7 +453,6 @@ export class GameFlowController extends Component {
 
         const available = this.inventory.GetCount(EItemType.GoldOre);
         if (available > 0) {
-            this.exchangeVisitDeposited = true;
             this.DepositInventoryGoldToOrcStorage();
             return;
         }
@@ -505,10 +504,7 @@ export class GameFlowController extends Component {
                     if (arrived >= starts.length) {
                         this.exchangeInProgress = false;
                         this.SetState(EGameFlowState.GoToExchange);
-                        if (
-                            this.sellerUnlocked
-                            || (!!this.exchangeInteractor?.IsPlayerInside && !this.exchangeVisitDeposited)
-                        ) {
+                        if (this.sellerUnlocked || this.exchangeInteractor?.IsPlayerInside) {
                             this.TryStartExchange();
                         }
                     }
@@ -534,7 +530,7 @@ export class GameFlowController extends Component {
 
     private TryStartExchange(): boolean {
         const canOperate = this.sellerUnlocked
-            || (!!this.exchangeInteractor?.IsPlayerInside && !this.exchangeVisitDeposited);
+            || !!this.exchangeInteractor?.IsPlayerInside;
         if (!this.cartQueue || !this.orcGoldStorage || this.exchangeInProgress || !canOperate) {
             return false;
         }
@@ -647,6 +643,7 @@ export class GameFlowController extends Component {
     }
 
     private GiveMoneyForFilledCart(amount: number): void {
+        this.RevealMoneyStorage();
         const storageTarget = this.moneyStorage?.receivePivot ?? this.moneyStorage?.node;
         const start = this.moneyFlyStart?.worldPosition ?? storageTarget?.worldPosition ?? new Vec3();
         let completed = 0;
@@ -690,7 +687,7 @@ export class GameFlowController extends Component {
     private ContinueExchangeOrLeave(): void {
         const hasStoredGold = (this.orcGoldStorage?.Amount ?? 0) > 0;
         const canContinue = this.sellerUnlocked
-            || (!!this.exchangeInteractor?.IsPlayerInside && !this.exchangeVisitDeposited);
+            || !!this.exchangeInteractor?.IsPlayerInside;
         if (canContinue && hasStoredGold) {
             this.SetState(EGameFlowState.ExchangeGold);
             this.TryStartExchange();
@@ -710,7 +707,6 @@ export class GameFlowController extends Component {
     }
 
     private OnExchangeExit(): void {
-        this.exchangeVisitDeposited = false;
         if (this.state === EGameFlowState.ExchangeGold && !this.exchangeInProgress) {
             this.SetState(EGameFlowState.GoToStorage);
         }
@@ -1215,7 +1211,7 @@ export class GameFlowController extends Component {
             return;
         }
         const targetScale = root.scale.clone();
-        root.setScale(Vec3.ZERO);
+        root.setScale(new Vec3(0.01, 0.01, 0.01));
         root.active = true;
         tween(root)
             .to(0.3, { scale: targetScale }, { easing: 'backOut' })
@@ -1417,6 +1413,25 @@ export class GameFlowController extends Component {
         if (this.conveyorGoldStorage) {
             this.conveyorGoldStorage.node.active = value;
         }
+    }
+
+    private SetMoneyStorageVisible(value: boolean): void {
+        const root = this.moneyStorage?.node;
+        if (!root) {
+            return;
+        }
+
+        Tween.stopAllByTarget(root);
+        root.active = value;
+    }
+
+    private RevealMoneyStorage(): void {
+        const root = this.moneyStorage?.node;
+        if (!root || root.active) {
+            return;
+        }
+
+        this.ShowNodeAnimated(root);
     }
 
     private SetSellerVisible(value: boolean): void {
