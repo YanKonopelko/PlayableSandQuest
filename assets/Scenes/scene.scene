@@ -62898,7 +62898,7 @@
     "finalZonePrice": 30,
     "sellerMoveSpeed": 3.5,
     "finalFenceHideDuration": 0.35,
-    "vacuumUpgradePurchasesBeforeConveyor": 0,
+    "vacuumUpgradePurchasesBeforeConveyor": 2,
     "shopItemTransferDelay": 0.05,
     "transferItemStaggerDelay": 0.05,
     "upgradeShopCameraMoveDuration": 0.8,
