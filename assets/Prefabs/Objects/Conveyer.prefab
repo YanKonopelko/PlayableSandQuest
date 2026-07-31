@@ -537,7 +537,7 @@
     },
     "fileId": "d9gS65xQZNp7mo2/j/wzVK",
     "instance": null,
-    "targetOverrides": [],
+    "targetOverrides": null,
     "nestedPrefabInstanceRoots": [
       {
         "__id__": 15

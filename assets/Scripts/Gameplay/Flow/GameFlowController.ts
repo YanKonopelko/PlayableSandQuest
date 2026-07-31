@@ -391,6 +391,7 @@ export class GameFlowController extends Component {
             return;
         }
 
+        const hasMoney = (this.inventory?.GetCount(EItemType.Money) ?? 0) > 0;
         const candidates: Array<{ target: HintTarget | null; available: boolean }> = [
             {
                 target: this.sandHint,
@@ -413,7 +414,19 @@ export class GameFlowController extends Component {
                 target: this.upgradeShopHint,
                 available:
                     !!this.upgradeShop?.node.activeInHierarchy
-                    && (this.inventory?.GetCount(EItemType.Money) ?? 0) > 0,
+                    && hasMoney,
+            },
+            {
+                target: this.GetFinalShopHint(this.longConveyorShop),
+                available: this.CanShowFinalShopHint(this.longConveyorShop, hasMoney),
+            },
+            {
+                target: this.GetFinalShopHint(this.sellerShop),
+                available: this.CanShowFinalShopHint(this.sellerShop, hasMoney),
+            },
+            {
+                target: this.GetFinalShopHint(this.finalZoneShop),
+                available: this.CanShowFinalShopHint(this.finalZoneShop, hasMoney),
             },
         ];
 
@@ -429,6 +442,16 @@ export class GameFlowController extends Component {
         }
 
         this.hints.Show(highestPriorityTarget);
+    }
+
+    private GetFinalShopHint(shop: ShopInteractor | null): HintTarget | null {
+        return shop?.getComponent(HintTarget) ?? null;
+    }
+
+    private CanShowFinalShopHint(shop: ShopInteractor | null, hasMoney: boolean): boolean {
+        return hasMoney
+            && !!shop?.node.activeInHierarchy
+            && !shop.IsPurchased;
     }
 
     private CanDepositOrExchangeGold(): boolean {
@@ -1052,6 +1075,11 @@ export class GameFlowController extends Component {
         }
 
         this.HidePurchasedFinalShop(shop);
+        if (shop === this.finalZoneShop) {
+            this.hints?.Hide();
+        } else {
+            this.RefreshPriorityHint();
+        }
         SoundManager.Instance?.Play(ESoundType.Upgrade);
         if (shop === this.longConveyorShop) {
             this.OnLongConveyorPurchased();
@@ -1109,6 +1137,7 @@ export class GameFlowController extends Component {
 
     private ConfigureFinalShops(): void {
         this.ResolveFinalVisualShops();
+        this.ConfigureFinalShopHints();
         this.ConfigureShop(this.longConveyorShop, this.longConveyorPrice);
         this.ConfigureShop(this.sellerShop, this.sellerPrice);
         this.ConfigureShop(this.finalZoneShop, this.finalZonePrice);
@@ -1116,6 +1145,20 @@ export class GameFlowController extends Component {
         this.SetVisualShopPrice(this.finalVisualShop2, this.sellerPrice);
         this.SetVisualShopPrice(this.finalVisualShop3, this.finalZonePrice);
         this.SetFinalShopInteractorsVisible(false);
+    }
+
+    private ConfigureFinalShopHints(): void {
+        const priority = this.upgradeShopHint?.priority;
+        if (priority === undefined) {
+            return;
+        }
+
+        for (const shop of [this.longConveyorShop, this.sellerShop, this.finalZoneShop]) {
+            const target = this.GetFinalShopHint(shop);
+            if (target) {
+                target.priority = priority;
+            }
+        }
     }
 
     private ResolveFinalVisualShops(): void {
