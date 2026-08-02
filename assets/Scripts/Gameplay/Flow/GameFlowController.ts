@@ -54,6 +54,15 @@ export class GameFlowController extends Component {
     @property({ type: Node, tooltip: 'World-space origin for the vacuum upgrade celebration.' })
     public sandMachine: Node | null = null;
 
+    @property({ type: Material, tooltip: 'SandMachine material before vacuum upgrades.' })
+    public sandMachineLevel0Material: Material | null = null;
+
+    @property({ type: Material, tooltip: 'SandMachine material after the first vacuum upgrade.' })
+    public sandMachineLevel1Material: Material | null = null;
+
+    @property({ type: Material, tooltip: 'SandMachine material after the second vacuum upgrade.' })
+    public sandMachineLevel2Material: Material | null = null;
+
     @property(ItemFlyService)
     public flyService: ItemFlyService | null = null;
 
@@ -138,7 +147,7 @@ export class GameFlowController extends Component {
     @property(ShopInteractor)
     public finalZoneShop: ShopInteractor | null = null;
 
-    @property({ type: Node, tooltip: 'Orc seller visual. It spawns at SellerShop and walks to SellerMoveTarget.' })
+    @property({ type: Node, tooltip: 'Orc seller visual spawned at SellerMoveTarget after purchase.' })
     public sellerRoot: Node | null = null;
 
     @property(Node)
@@ -179,9 +188,6 @@ export class GameFlowController extends Component {
 
     @property({ type: CCInteger, min: 1 })
     public finalZonePrice: number = 30;
-
-    @property({ type: CCFloat, min: 0.1 })
-    public sellerMoveSpeed: number = 3.5;
 
     @property({ type: CCFloat, min: 0.05 })
     public finalFenceHideDuration: number = 0.35;
@@ -225,6 +231,7 @@ export class GameFlowController extends Component {
     private upgradePurchases: number = 0;
     private state: EGameFlowState = EGameFlowState.GoToSand;
     private exchangeInProgress: boolean = false;
+    private goldDepositInProgress: boolean = false;
     private storageTransferInProgress: boolean = false;
     private conveyorStorageTransferInProgress: boolean = false;
     private shopTransfer: ShopInteractor | null = null;
@@ -234,7 +241,6 @@ export class GameFlowController extends Component {
     private longConveyorUnlocked: boolean = false;
     private sellerPurchased: boolean = false;
     private sellerUnlocked: boolean = false;
-    private sellerAnimation: PlayerAnimationController | null = null;
     private conveyorSpawnTimer: number = 0;
     private conveyorSpawnPoint: Node | null = null;
     private readonly conveyorItems: IConveyorGoldItem[] = [];
@@ -402,9 +408,7 @@ export class GameFlowController extends Component {
             },
             {
                 target: this.exchangeHint,
-                available:
-                    !(this.sellerPurchased && this.longConveyorPurchased)
-                    && this.CanDepositOrExchangeGold(),
+                available: this.CanDepositOrExchangeGold(),
             },
             {
                 target: this.storageHint,
@@ -459,6 +463,9 @@ export class GameFlowController extends Component {
         const inventoryGold = this.inventory?.GetCount(EItemType.GoldOre) ?? 0;
         if (inventoryGold > 0) {
             return true;
+        }
+        if (this.sellerUnlocked) {
+            return false;
         }
         if (!activeCart || !this.orcGoldStorage) {
             return false;
@@ -519,7 +526,7 @@ export class GameFlowController extends Component {
     private DepositInventoryGoldToOrcStorage(): void {
         const storage = this.orcGoldStorage;
         const inventory = this.inventory;
-        if (!storage || !inventory || this.exchangeInProgress) {
+        if (!storage || !inventory || this.goldDepositInProgress) {
             return;
         }
 
@@ -549,7 +556,7 @@ export class GameFlowController extends Component {
             return;
         }
 
-        this.exchangeInProgress = true;
+        this.goldDepositInProgress = true;
         this.SetState(EGameFlowState.ExchangeGold);
         let arrived = 0;
         for (let i = 0; i < starts.length; i++) {
@@ -558,8 +565,10 @@ export class GameFlowController extends Component {
                     storage.Receive(EItemType.GoldOre, 1);
                     arrived++;
                     if (arrived >= starts.length) {
-                        this.exchangeInProgress = false;
-                        this.SetState(EGameFlowState.GoToExchange);
+                        this.goldDepositInProgress = false;
+                        if (!this.exchangeInProgress) {
+                            this.SetState(EGameFlowState.GoToExchange);
+                        }
                         if (this.sellerUnlocked || this.exchangeInteractor?.IsPlayerInside) {
                             this.TryStartExchange();
                         }
@@ -763,7 +772,11 @@ export class GameFlowController extends Component {
     }
 
     private OnExchangeExit(): void {
-        if (this.state === EGameFlowState.ExchangeGold && !this.exchangeInProgress) {
+        if (
+            this.state === EGameFlowState.ExchangeGold
+            && !this.exchangeInProgress
+            && !this.goldDepositInProgress
+        ) {
             this.SetState(EGameFlowState.GoToStorage);
         }
     }
@@ -1114,6 +1127,30 @@ export class GameFlowController extends Component {
         const upgradeLevel = this.vacuum?.UpgradeLevel ?? 0;
         this.inventory?.SetGoldOreCapacityForUpgradeLevel(upgradeLevel);
         this.sandField?.SetOreCountForUpgradeLevel(upgradeLevel);
+        this.ApplySandMachineMaterial(upgradeLevel);
+    }
+
+    private ApplySandMachineMaterial(upgradeLevel: number): void {
+        if (!this.sandMachine) {
+            return;
+        }
+
+        let material = this.sandMachineLevel0Material;
+        if (upgradeLevel >= 2) {
+            material = this.sandMachineLevel2Material
+                ?? this.sandMachineLevel1Material
+                ?? this.sandMachineLevel0Material;
+        } else if (upgradeLevel >= 1) {
+            material = this.sandMachineLevel1Material ?? this.sandMachineLevel0Material;
+        }
+
+        if (!material) {
+            return;
+        }
+
+        for (const renderer of this.sandMachine.getComponentsInChildren(MeshRenderer)) {
+            renderer.setMaterial(material, 0);
+        }
     }
 
     private ConfigureUpgradeShopPrice(): void {
@@ -1237,11 +1274,11 @@ export class GameFlowController extends Component {
         }
         seller.addChild(visual);
 
-        this.sellerAnimation = seller.getComponent(PlayerAnimationController)
+        const sellerAnimation = seller.getComponent(PlayerAnimationController)
             ?? seller.addComponent(PlayerAnimationController);
-        this.sellerAnimation.animation = visual.getComponentInChildren(animation.AnimationController);
-        this.sellerAnimation.SetVacuumEnabled(false);
-        this.sellerAnimation.SetMoving(false);
+        sellerAnimation.animation = visual.getComponentInChildren(animation.AnimationController);
+        sellerAnimation.SetVacuumEnabled(false);
+        sellerAnimation.SetMoving(false);
     }
 
     private OnLongConveyorPurchased(): void {
@@ -1295,61 +1332,39 @@ export class GameFlowController extends Component {
     private OnSellerPurchased(): void {
         this.sellerPurchased = true;
         this.UpdateExchangeInteractorVisualVisibility();
-        this.RefreshPriorityHint();
 
         const seller = this.sellerRoot;
         if (!seller) {
             this.sellerUnlocked = true;
+            this.RefreshPriorityHint();
             this.TryStartExchange();
             return;
         }
 
-        const spawnPosition = seller.worldPosition;
         const target = this.sellerMoveTarget ?? this.exchangeInteractor?.node ?? null;
-        const targetScale = seller.scale.clone();
-        seller.setWorldPosition(spawnPosition);
-        seller.setScale(Vec3.ZERO);
+        if (target) {
+            const targetPosition = target.worldPosition.clone();
+            targetPosition.y = seller.worldPosition.y;
+            const directionX = targetPosition.x - seller.worldPosition.x;
+            const directionZ = targetPosition.z - seller.worldPosition.z;
+            if (directionX * directionX + directionZ * directionZ > 0.0001) {
+                const currentRotation = seller.eulerAngles;
+                seller.setRotationFromEuler(
+                    currentRotation.x,
+                    Math.atan2(directionX, directionZ) * 180 / Math.PI,
+                    currentRotation.z,
+                );
+            }
+            seller.setWorldPosition(targetPosition);
+        }
+
+        Tween.stopAllByTarget(seller);
         seller.active = true;
-
-        tween(seller)
-            .to(0.3, { scale: targetScale }, { easing: 'backOut' })
-            .call(() => this.MoveSellerToExchange(target))
-            .start();
-    }
-
-    private MoveSellerToExchange(target: Node | null): void {
-        const seller = this.sellerRoot;
-        if (!seller || !target) {
-            this.sellerUnlocked = true;
-            this.TryStartExchange();
-            return;
-        }
-
-        const animation = this.sellerAnimation
-            ?? seller.getComponentInChildren(PlayerAnimationController);
-        animation?.SetMoving(true);
-        let targetPosition = target.worldPosition.clone();
-        targetPosition.y = seller.worldPosition.y;
-        const directionX = targetPosition.x - seller.worldPosition.x;
-        const directionZ = targetPosition.z - seller.worldPosition.z;
-        if (directionX * directionX + directionZ * directionZ > 0.0001) {
-            const currentRotation = seller.eulerAngles;
-            seller.setRotationFromEuler(
-                currentRotation.x,
-                Math.atan2(directionX, directionZ) * 180 / Math.PI,
-                currentRotation.z,
-            );
-        }
-        const duration = Vec3.distance(seller.worldPosition, targetPosition)
-            / Math.max(0.1, this.sellerMoveSpeed);
-        tween(seller)
-            .to(duration, { worldPosition: targetPosition }, { easing: 'linear' })
-            .call(() => {
-                animation?.SetMoving(false);
-                this.sellerUnlocked = true;
-                this.TryStartExchange();
-            })
-            .start();
+        seller.getComponentInChildren(PlayerAnimationController)?.SetMoving(false);
+        ParticleManager.Instance?.PlayAtNode(EParticleType.VacuumUpgrade, seller);
+        this.sellerUnlocked = true;
+        this.RefreshPriorityHint();
+        this.TryStartExchange();
     }
 
     private OnFinalZonePurchased(): void {

@@ -1,6 +1,6 @@
 {
   "__type__": "cc.Material",
-  "_name": "SandMachine_Level0",
+  "_name": "SandMachine_Level1",
   "_objFlags": 0,
   "__editorExtras__": {},
   "_native": "",
@@ -49,8 +49,8 @@
     {
       "mainColor": {
         "__type__": "cc.Color",
-        "r": 255,
-        "g": 255,
+        "r": 19,
+        "g": 198,
         "b": 255,
         "a": 255
       },
