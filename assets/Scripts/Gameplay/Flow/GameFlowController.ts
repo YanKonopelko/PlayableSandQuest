@@ -198,6 +198,18 @@ export class GameFlowController extends Component {
     @property({ type: CCFloat, min: 0 })
     public shopItemTransferDelay: number = 0.12;
 
+    @property({ type: CCFloat, min: 0.01, tooltip: 'Base flight duration for one shop payment item.' })
+    public shopItemFlyDuration: number = 0.1;
+
+    @property({ type: CCFloat, min: 0, tooltip: 'Smallest delay reached when many shop payment items are available.' })
+    public minimumShopItemTransferDelay: number = 0.01;
+
+    @property({ type: CCFloat, min: 0.01, tooltip: 'Smallest flight duration reached when many shop payment items are available.' })
+    public minimumShopItemFlyDuration: number = 0.035;
+
+    @property({ type: CCFloat, min: 0.1, max: 1, tooltip: 'Power used to accelerate bulk shop payments. 0.5 gives square-root timing.' })
+    public shopTransferAccelerationPower: number = 0.5;
+
     @property({ type: CCFloat, min: 0, tooltip: 'Delay between consecutive gold and storage-money flight starts.' })
     public transferItemStaggerDelay: number = 0.09;
 
@@ -1033,6 +1045,22 @@ export class GameFlowController extends Component {
         }
 
         const paymentStack = inventory.GetStackView(shop.priceItem);
+        const transferableCount = Math.max(
+            1,
+            Math.min(shop.Remaining, inventory.GetCount(shop.priceItem)),
+        );
+        const transferTimeScale = 1 / Math.pow(
+            transferableCount,
+            Math.max(0.1, Math.min(1, this.shopTransferAccelerationPower)),
+        );
+        const nextItemDelay = Math.max(
+            this.minimumShopItemTransferDelay,
+            Math.max(0, this.shopItemTransferDelay) * transferTimeScale,
+        );
+        const flyDuration = Math.max(
+            this.minimumShopItemFlyDuration,
+            Math.max(0.01, this.shopItemFlyDuration) * transferTimeScale,
+        );
         const fallbackStart = this.playerItemFlyStart?.worldPosition
             ?? this.player?.node.worldPosition
             ?? new Vec3();
@@ -1064,7 +1092,7 @@ export class GameFlowController extends Component {
 
             this.scheduleOnce(
                 () => this.TryTransferNextShopItem(shop),
-                Math.max(0, this.shopItemTransferDelay),
+                nextItemDelay,
             );
         };
 
@@ -1072,11 +1100,11 @@ export class GameFlowController extends Component {
             ? this.goldFlyPrefab
             : this.moneyFlyPrefab;
         const flyingItem = this.flyService && paymentPrefab
-            ? this.flyService.FlyPrefabToNode(paymentPrefab, start.clone(), target, onItemArrived, 0.1)
+            ? this.flyService.FlyPrefabToNode(paymentPrefab, start.clone(), target, onItemArrived, flyDuration)
             : null;
 
         if (!flyingItem) {
-            this.scheduleOnce(onItemArrived, Math.max(0, this.shopItemTransferDelay));
+            this.scheduleOnce(onItemArrived, nextItemDelay);
         }
     }
 

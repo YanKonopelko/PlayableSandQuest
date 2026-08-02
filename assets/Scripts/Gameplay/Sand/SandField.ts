@@ -11,7 +11,7 @@ const { ccclass, property } = _decorator;
 
 @ccclass('SandField')
 export class SandField extends Component {
-    private static readonly ORE_COUNTS_BY_UPGRADE_LEVEL: readonly number[] = [30, 50, 70];
+    private static readonly ORE_COUNTS_BY_UPGRADE_LEVEL: readonly number[] = [50, 70, 90];
 
     @property(VacuumSystem)
     public vacuumSystem: VacuumSystem | null = null;
