@@ -243,7 +243,9 @@ class channel_handler {
         }
         return `window.ToStore = function(auto = false) {
     super_log("ToStore " + window.super_html_channel);
-    window.open("https://play.google.com/store/apps/details?id=com.evrika.miner.camp", "_blank");
+    if (window.super_html && typeof window.super_html.download === "function") {
+        window.super_html.download();
+    }
 };`;
     }
     _get_settings_path() {

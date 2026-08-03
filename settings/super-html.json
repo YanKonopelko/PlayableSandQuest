@@ -2,6 +2,26 @@
   "enable_obfuscator": true,
   "path": "",
   "build_names": {
-    "applovin__html": "GHM_PbCheckinLuggage_applovin_EN.html"
+    "common__html": "OrcsSandQuest_common.html",
+    "common_min__html": "OrcsSandQuest_common_min.html",
+    "applovin__html": "OrcsSandQuest_applovin.html",
+    "ironsource__html": "OrcsSandQuest_ironsource.html",
+    "ironsourcemraid__html": "OrcsSandQuest_ironsourcemraid.html",
+    "mintegral__zip": "OrcsSandQuest_mintegral.zip",
+    "unity__html": "OrcsSandQuest_unity.html",
+    "google__zip": "OrcsSandQuest_google.zip",
+    "google_portrait__portrait__zip": "OrcsSandQuest_google_portrait.zip",
+    "google_landscape__landscape__zip": "OrcsSandQuest_google_landscape.zip",
+    "facebook__html": "OrcsSandQuest_facebook.html",
+    "facebook__zip": "OrcsSandQuest_facebook.zip",
+    "pangle__zip": "OrcsSandQuest_pangle.zip",
+    "pangle_portrait__portrait__zip": "OrcsSandQuest_pangle_portrait.zip",
+    "pangle_landscape__landscape__zip": "OrcsSandQuest_pangle_landscape.zip",
+    "liftoff__zip": "OrcsSandQuest_liftoff.zip",
+    "moloco__html": "OrcsSandQuest_moloco.html",
+    "tiktok__zip": "OrcsSandQuest_tiktok.zip",
+    "vungle__zip": "OrcsSandQuest_vungle.zip",
+    "bigo__zip": "OrcsSandQuest_bigo.zip",
+    "kwai__zip": "OrcsSandQuest_kwai.zip"
   }
 }

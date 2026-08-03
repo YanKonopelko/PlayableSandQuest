@@ -9,13 +9,54 @@ type ApplovinEvent =
     | 'COMPLETED'
     | 'CTA_CLICKED';
 
+const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.evrika.miner.camp';
+const APP_STORE_URL = 'https://apps.apple.com/app/id6447562895';
+
+interface SuperHtmlApi {
+    google_play_url?: string;
+    appstore_url?: string;
+}
+
 declare global {
     interface Window {
+        ToStore?: () => void;
         ALPlayableAnalytics?: {
             trackEvent: (eventName: ApplovinEvent) => void;
         };
+        super_html?: SuperHtmlApi;
         super_html_channel?: string;
     }
+}
+
+function isAppleDevice(): boolean {
+    if (typeof navigator === 'undefined') {
+        return false;
+    }
+
+    return /iPad|iPhone|iPod/i.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+export function openStore(): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    const appleDevice = isAppleDevice();
+    const storeUrl = appleDevice ? APP_STORE_URL : GOOGLE_PLAY_URL;
+
+    // super-html adapters use these fields when no ad-network SDK is available.
+    if (window.super_html) {
+        window.super_html.google_play_url = appleDevice ? '' : GOOGLE_PLAY_URL;
+        window.super_html.appstore_url = appleDevice ? APP_STORE_URL : '';
+    }
+
+    if (typeof window.ToStore === 'function') {
+        window.ToStore();
+        return;
+    }
+
+    window.open(storeUrl, '_blank');
 }
 
 export class ApplovinAnalytics {

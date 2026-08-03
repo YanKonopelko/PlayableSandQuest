@@ -1,21 +1,13 @@
 import { _decorator, Component, input, Input } from 'cc';
+import { openStore } from './ApplovinAnalytics';
 import { SoundManager } from './Sounds/SoundManager';
 import { ESoundType } from './Sounds/SoundPreset';
-
-declare global {
-    interface Window {
-        ToStore?: () => void;
-    }
-}
 
 const { ccclass } = _decorator;
 
 @ccclass('GameplayScene')
 export class GameplayScene extends Component {
     public static paused: boolean = false;
-
-    private readonly androidLink: string = 'https://play.google.com/store/apps/details?id=com.evrika.miner.camp';
-    private readonly iosLink: string = 'https://apps.apple.com/app/id6447562895';
 
     private audioStarted: boolean = false;
 
@@ -41,7 +33,7 @@ export class GameplayScene extends Component {
 
     public ToStore(): void {
         SoundManager.Instance?.Play(ESoundType.ButtonClick);
-        window.ToStore?.();
+        openStore();
     }
 
     private OnVisibilityChanged(): void {
