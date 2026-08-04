@@ -79,6 +79,7 @@ export class PlayerController extends Component {
     private stepTimer: number = 0;
     private nextStepType: ESoundType = ESoundType.Step1;
     private sceneCamera: Camera | null = null;
+    private stopIndicatorWasVisible: boolean = false;
 
     public get IsMovementEnabled(): boolean {
         return this.movementEnabled;
@@ -162,7 +163,13 @@ export class PlayerController extends Component {
         }
 
         const showStop = this.vacuumSystem?.IsAtMaxLength ?? false;
-        this.stopIndicator.active = showStop;
+        if (showStop !== this.stopIndicatorWasVisible) {
+            this.stopIndicator.active = showStop;
+            this.stopIndicatorWasVisible = showStop;
+            if (showStop) {
+                SoundManager.Instance?.Play(ESoundType.StopWarning);
+            }
+        }
         if (!showStop) {
             return;
         }

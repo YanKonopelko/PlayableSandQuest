@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, Component, instantiate, Node, Prefab, Vec3 } from 'cc';
+import { _decorator, CCFloat, Component, instantiate, Node, NodePool, Prefab, Quat, Tween, Vec3 } from 'cc';
 import { RequiredReference } from '../Core/RequiredReference';
 import { TweenUtils } from '../../Utills/TweenUtils';
 
@@ -25,9 +25,17 @@ export class ItemFlyService extends Component {
     public flightArcSpread: number = 0.55;
 
     private flightSequence: number = 0;
+    private readonly prefabPools: Map<Prefab, NodePool> = new Map();
+    private readonly prefabScales: WeakMap<Node, Vec3> = new WeakMap();
+    private readonly prefabRotations: WeakMap<Node, Quat> = new WeakMap();
 
     protected onLoad(): void {
         RequiredReference.CheckNode(this, this.flyRoot, 'flyRoot');
+    }
+
+    protected onDestroy(): void {
+        this.prefabPools.forEach((pool) => pool.clear());
+        this.prefabPools.clear();
     }
 
     public FlyPrefabToNode(
@@ -44,7 +52,7 @@ export class ItemFlyService extends Component {
             return null;
         }
 
-        const item = instantiate(prefab);
+        const item = this.AcquirePrefab(prefab);
         this.flyRoot.addChild(item);
         item.setWorldPosition(fromWorld);
         this.EnlargeFlyingItem(item);
@@ -55,7 +63,7 @@ export class ItemFlyService extends Component {
             target,
             Math.max(item.scale.x, this.flightPeakScale),
             () => {
-                item.destroy();
+                this.ReleasePrefab(prefab, item);
                 onComplete && onComplete();
             },
             duration,
@@ -63,6 +71,40 @@ export class ItemFlyService extends Component {
         );
 
         return item;
+    }
+
+    private AcquirePrefab(prefab: Prefab): Node {
+        let pool = this.prefabPools.get(prefab);
+        if (!pool) {
+            pool = new NodePool();
+            this.prefabPools.set(prefab, pool);
+        }
+
+        const item = pool.size() > 0 ? pool.get()! : instantiate(prefab);
+        if (!this.prefabScales.has(item)) {
+            this.prefabScales.set(item, item.scale.clone());
+            this.prefabRotations.set(item, item.rotation.clone());
+        }
+
+        Tween.stopAllByTarget(item);
+        item.active = true;
+        item.setScale(this.prefabScales.get(item)!);
+        item.setRotation(this.prefabRotations.get(item)!);
+        return item;
+    }
+
+    private ReleasePrefab(prefab: Prefab, item: Node): void {
+        if (!item?.isValid) {
+            return;
+        }
+
+        Tween.stopAllByTarget(item);
+        const pool = this.prefabPools.get(prefab);
+        if (pool) {
+            pool.put(item);
+        } else {
+            item.destroy();
+        }
     }
 
     public FlyExistingToNode(

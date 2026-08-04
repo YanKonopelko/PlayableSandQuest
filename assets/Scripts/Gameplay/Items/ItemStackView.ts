@@ -1,4 +1,4 @@
-import { _decorator, CCFloat, CCInteger, Component, instantiate, Node, Prefab, tween, Vec3 } from 'cc';
+import { _decorator, CCFloat, CCInteger, Component, instantiate, Node, Prefab, tween, Tween, Vec3 } from 'cc';
 import { RequiredReference } from '../Core/RequiredReference';
 
 const { ccclass, property } = _decorator;
@@ -50,9 +50,10 @@ export class ItemStackView extends Component {
     }
 
     public SetCount(value: number, animate: boolean = true): void {
+        const previousVisibleCount = this.VisibleCount;
         this.count = Math.max(0, value);
         this.EnsureItems(this.VisibleCount);
-        this.RefreshItems(animate);
+        this.RefreshChangedItems(previousVisibleCount, animate);
     }
 
     public ConfigureUnifiedStack(root: Node, startHeight: number): void {
@@ -66,7 +67,7 @@ export class ItemStackView extends Component {
             }
         }
 
-        this.RefreshItems(false);
+        this.RefreshAllItems(false);
     }
 
     public CreateItemTarget(index: number): Node | null {
@@ -95,21 +96,45 @@ export class ItemStackView extends Component {
         return this.node.getWorldPosition(out);
     }
 
-    private RefreshItems(animate: boolean): void {
+    private RefreshChangedItems(previousVisibleCount: number, animate: boolean): void {
         const visibleCount = this.VisibleCount;
 
-        for (let i = 0; i < this.items.length; i++) {
+        for (let i = visibleCount; i < previousVisibleCount; i++) {
             const item = this.items[i];
-            const active = i < visibleCount;
-            item.active = active;
+            Tween.stopAllByTarget(item);
+            item.active = false;
+        }
 
-            if (!active) {
-                continue;
-            }
-
+        for (let i = previousVisibleCount; i < visibleCount; i++) {
+            const item = this.items[i];
+            item.active = true;
             const target = this.GetItemPosition(i);
             item.setPosition(target);
 
+            if (animate) {
+                Tween.stopAllByTarget(item);
+                item.setScale(0.01, 0.01, 0.01);
+                tween(item)
+                    .to(0.16, { scale: new Vec3(1.12, 1.12, 1.12) }, { easing: 'backOut' })
+                    .to(0.08, { scale: Vec3.ONE })
+                    .start();
+            } else if (!animate) {
+                item.setScale(Vec3.ONE);
+            }
+        }
+    }
+
+    private RefreshAllItems(animate: boolean): void {
+        const visibleCount = this.VisibleCount;
+        for (let i = 0; i < this.items.length; i++) {
+            const item = this.items[i];
+            item.active = i < visibleCount;
+            Tween.stopAllByTarget(item);
+            if (!item.active) {
+                continue;
+            }
+
+            item.setPosition(this.GetItemPosition(i));
             if (animate) {
                 item.setScale(0.01, 0.01, 0.01);
                 tween(item)

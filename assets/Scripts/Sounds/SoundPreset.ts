@@ -17,6 +17,7 @@ export enum ESoundType{
     LockInteract,
     Upgrade,
     ButtonClick,
+    StopWarning,
 }
 
 @ccclass('SoundPreset')
