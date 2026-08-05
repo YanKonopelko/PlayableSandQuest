@@ -37,7 +37,7 @@ export class PlayerInventory extends Component {
         return this.GetCount(itemType) >= amount;
     }
 
-    public Add(itemType: EItemType, amount: number = 1): number {
+    public Add(itemType: EItemType, amount: number = 1, animate: boolean = true): number {
         const requestedAmount = this.NormalizeAmount(amount);
         const acceptedAmount = Math.min(requestedAmount, this.GetAvailableCapacity(itemType));
         if (acceptedAmount <= 0) {
@@ -45,7 +45,7 @@ export class PlayerInventory extends Component {
         }
 
         this.counts[itemType] = this.GetCount(itemType) + acceptedAmount;
-        this.RefreshStackViews(itemType);
+        this.RefreshStackViews(itemType, animate);
         this.onAmountChanged.Invoke(itemType);
         return acceptedAmount;
     }
@@ -72,14 +72,18 @@ export class PlayerInventory extends Component {
         return true;
     }
 
-    public CommitReserved(itemType: EItemType, amount: number = 1): number {
+    public CommitReserved(itemType: EItemType, amount: number = 1, animate: boolean = true): number {
         const committedAmount = Math.min(this.NormalizeAmount(amount), this.GetReservedCount(itemType));
         if (committedAmount <= 0) {
             return 0;
         }
 
         this.reservedCounts[itemType] = this.GetReservedCount(itemType) - committedAmount;
-        return this.Add(itemType, committedAmount);
+        return this.Add(itemType, committedAmount, animate);
+    }
+
+    public GetProjectedCount(itemType: EItemType): number {
+        return this.GetCount(itemType) + this.GetReservedCount(itemType);
     }
 
     public TryRemove(itemType: EItemType, amount: number = 1): boolean {

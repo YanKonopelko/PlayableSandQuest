@@ -256,7 +256,7 @@ export class GameFlowController extends Component {
     private conveyorSpawnTimer: number = 0;
     private conveyorSpawnPoint: Node | null = null;
     private readonly conveyorItems: IConveyorGoldItem[] = [];
-    private readonly conveyorDeliveriesInFlight: Map<StorageInteractor, number> = new Map();
+    private readonly storageDeliveriesInFlight: Map<StorageInteractor, number> = new Map();
     private readonly conveyorDeliveryPosition: Vec3 = new Vec3();
     private readonly conveyorMoveDelta: Vec3 = new Vec3();
     private conveyorBeltMaterial: Material | null = null;
@@ -549,15 +549,14 @@ export class GameFlowController extends Component {
         }
 
         const stack = inventory.goldOreStack;
-        const visibleCount = stack?.VisibleCount ?? available;
         const fallbackStart = this.playerItemFlyStart?.worldPosition
             ?? this.player?.node.worldPosition
             ?? new Vec3();
-        const target = storage.receivePivot ?? storage.node;
+        const fallbackTarget = storage.receivePivot ?? storage.node;
         const starts: Vec3[] = [];
 
         for (let i = 0; i < amount; i++) {
-            starts.push(stack?.GetItemWorldPosition(Math.max(0, visibleCount - 1 - i)) ?? fallbackStart.clone());
+            starts.push(stack?.GetTopItemWorldPosition() ?? fallbackStart.clone());
             if (!inventory.TryRemove(EItemType.GoldOre, 1)) {
                 starts.pop();
                 break;
@@ -570,11 +569,18 @@ export class GameFlowController extends Component {
 
         this.goldDepositInProgress = true;
         this.SetState(EGameFlowState.ExchangeGold);
+        const deliveryTargets = this.ReserveStorageDeliveryTargets(storage, starts.length);
         let arrived = 0;
         for (let i = 0; i < starts.length; i++) {
             const launch = () => {
+                const itemTarget = deliveryTargets[i];
+                const target = itemTarget ?? fallbackTarget;
                 const onArrived = () => {
-                    storage.Receive(EItemType.GoldOre, 1);
+                    if (itemTarget?.isValid) {
+                        itemTarget.destroy();
+                    }
+                    this.CompleteStorageDelivery(storage);
+                    storage.Receive(EItemType.GoldOre, 1, false);
                     arrived++;
                     if (arrived >= starts.length) {
                         this.goldDepositInProgress = false;
@@ -593,6 +599,8 @@ export class GameFlowController extends Component {
                         target,
                         onArrived,
                         0.35 + i * 0.02,
+                        this.flyService.defaultArcHeight,
+                        !!itemTarget,
                     )
                     : null;
                 SoundManager.Instance?.Play(ESoundType.SpendGold);
@@ -644,12 +652,11 @@ export class GameFlowController extends Component {
             ?? storageStack?.root?.worldPosition
             ?? storage?.node.worldPosition
             ?? new Vec3();
-        const visibleGoldCount = storageStack?.VisibleCount ?? storage?.Amount ?? 0;
         const startPositions: Vec3[] = [];
 
         for (let i = 0; i < amount; i++) {
             startPositions.push(
-                storageStack?.GetItemWorldPosition(Math.max(0, visibleGoldCount - 1 - i))
+                storageStack?.GetTopItemWorldPosition(i)
                     ?? fallbackStart.clone(),
             );
         }
@@ -721,11 +728,18 @@ export class GameFlowController extends Component {
 
     private GiveMoneyForFilledCart(amount: number): void {
         this.RevealMoneyStorage();
-        const storageTarget = this.moneyStorage?.receivePivot ?? this.moneyStorage?.node;
-        const start = this.moneyFlyStart?.worldPosition ?? storageTarget?.worldPosition ?? new Vec3();
+        const storage = this.moneyStorage;
+        const fallbackTarget = storage?.receivePivot ?? storage?.node;
+        const start = this.moneyFlyStart?.worldPosition ?? fallbackTarget?.worldPosition ?? new Vec3();
+        const deliveryTargets = storage
+            ? this.ReserveStorageDeliveryTargets(storage, amount)
+            : Array.from({ length: amount }, () => null);
         let completed = 0;
         const onOneMoneyArrived = () => {
-            this.moneyStorage?.Receive(EItemType.Money, 1);
+            if (storage) {
+                this.CompleteStorageDelivery(storage);
+            }
+            storage?.Receive(EItemType.Money, 1, false);
             completed++;
             if (completed >= amount) {
                 this.exchangeInProgress = false;
@@ -736,19 +750,29 @@ export class GameFlowController extends Component {
         const staggerDelay = Math.max(0, this.transferItemStaggerDelay);
         for (let i = 0; i < amount; i++) {
             const launchMoneyToStorage = () => {
-                const flyingItem = this.flyService && this.moneyFlyPrefab && storageTarget
+                const itemTarget = deliveryTargets[i];
+                const target = itemTarget ?? fallbackTarget;
+                const onArrived = () => {
+                    if (itemTarget?.isValid) {
+                        itemTarget.destroy();
+                    }
+                    onOneMoneyArrived();
+                };
+                const flyingItem = this.flyService && this.moneyFlyPrefab && target
                     ? this.flyService.FlyPrefabToNode(
                         this.moneyFlyPrefab,
                         start.clone(),
-                        storageTarget,
-                        onOneMoneyArrived,
+                        target,
+                        onArrived,
                         0.5 + i * 0.03,
+                        this.flyService.defaultArcHeight,
+                        !!itemTarget,
                     )
                     : null;
 
                 SoundManager.Instance?.Play(ESoundType.MoneySpend);
                 if (!flyingItem) {
-                    onOneMoneyArrived();
+                    onArrived();
                 }
             };
 
@@ -814,13 +838,11 @@ export class GameFlowController extends Component {
         const fallbackStart = this.moneyStorage.receivePivot?.worldPosition
             ?? storageStack?.root?.worldPosition
             ?? this.moneyStorage.node.worldPosition;
-        const visibleMoneyCount = storageStack?.VisibleCount ?? 0;
         const startPositions: Vec3[] = [];
 
         for (let i = 0; i < amount; i++) {
-            const stackIndex = Math.max(0, visibleMoneyCount - 1 - i);
             startPositions.push(
-                storageStack?.GetItemWorldPosition(stackIndex) ?? fallbackStart.clone(),
+                storageStack?.GetTopItemWorldPosition(i) ?? fallbackStart.clone(),
             );
         }
 
@@ -846,7 +868,7 @@ export class GameFlowController extends Component {
                     if (itemTarget?.isValid) {
                         itemTarget.destroy();
                     }
-                    this.inventory?.Add(EItemType.Money, 1);
+                    this.inventory?.Add(EItemType.Money, 1, false);
                     completed++;
 
                     if (completed >= amount) {
@@ -910,13 +932,18 @@ export class GameFlowController extends Component {
         }
 
         const storageStack = storage.stackView;
-        const visibleCount = storageStack?.VisibleCount ?? amount;
         const fallbackStart = storage.receivePivot?.worldPosition
             ?? storageStack?.root?.worldPosition
             ?? storage.node.worldPosition;
         const playerStack = inventory.goldOreStack;
-        const initialGoldCount = inventory.GetCount(EItemType.GoldOre);
+        const firstReservedGoldIndex = inventory.GetProjectedCount(EItemType.GoldOre) - amount;
         const fallbackTarget = playerStack?.root ?? this.playerItemFlyStart ?? this.player?.node ?? null;
+        const startPositions: Vec3[] = [];
+        for (let i = 0; i < amount; i++) {
+            startPositions.push(
+                storageStack?.GetTopItemWorldPosition(i) ?? fallbackStart.clone(),
+            );
+        }
         let completed = 0;
         this.conveyorStorageTransferInProgress = true;
         if (!storage.TryTake(amount)) {
@@ -925,16 +952,14 @@ export class GameFlowController extends Component {
         }
 
         for (let i = 0; i < amount; i++) {
-            const start = storageStack?.GetItemWorldPosition(Math.max(0, visibleCount - 1 - i))
-                ?? fallbackStart.clone();
             const launch = () => {
-                const itemTarget = playerStack?.CreateItemTarget(initialGoldCount + i);
+                const itemTarget = playerStack?.CreateItemTarget(firstReservedGoldIndex + i);
                 const target = itemTarget ?? fallbackTarget;
                 const onArrived = () => {
                     if (itemTarget?.isValid) {
                         itemTarget.destroy();
                     }
-                    inventory.CommitReserved(EItemType.GoldOre, 1);
+                    inventory.CommitReserved(EItemType.GoldOre, 1, false);
                     completed++;
                     if (completed >= amount) {
                         this.conveyorStorageTransferInProgress = false;
@@ -946,7 +971,7 @@ export class GameFlowController extends Component {
                 const flyingItem = this.flyService && this.goldFlyPrefab && target
                     ? this.flyService.FlyPrefabToNode(
                         this.goldFlyPrefab,
-                        start,
+                        startPositions[i] ?? fallbackStart.clone(),
                         target,
                         onArrived,
                         0.35 + i * 0.03,
@@ -1065,7 +1090,7 @@ export class GameFlowController extends Component {
             ?? this.player?.node.worldPosition
             ?? new Vec3();
         const start = paymentStack && paymentStack.VisibleCount > 0
-            ? paymentStack.GetItemWorldPosition(paymentStack.VisibleCount - 1)
+            ? paymentStack.GetTopItemWorldPosition()
             : fallbackStart.clone();
 
         if (!inventory.TryRemove(shop.priceItem, 1)) {
@@ -1329,14 +1354,13 @@ export class GameFlowController extends Component {
 
         const amount = source.Amount;
         const stack = source.stackView;
-        const visibleCount = stack?.VisibleCount ?? amount;
         const fallbackStart = source.receivePivot?.worldPosition
             ?? stack?.root?.worldPosition
             ?? source.node.worldPosition;
         const startPositions: Vec3[] = [];
         for (let i = 0; i < amount; i++) {
             startPositions.push(
-                stack?.GetItemWorldPosition(Math.max(0, visibleCount - 1 - i))
+                stack?.GetTopItemWorldPosition(i)
                     ?? fallbackStart.clone(),
             );
         }
@@ -1637,40 +1661,57 @@ export class GameFlowController extends Component {
         if (!storage) {
             return;
         }
-        const pending = this.conveyorDeliveriesInFlight.get(storage) ?? 0;
+        const pending = this.storageDeliveriesInFlight.get(storage) ?? 0;
         if (!storage.CanReceive(EItemType.GoldOre, pending + 1)) {
             return;
         }
 
-        this.conveyorDeliveriesInFlight.set(storage, pending + 1);
         this.conveyorItems.splice(itemIndex, 1);
         const item = itemState.node;
-        const target = storage.receivePivot ?? storage.node;
+        const itemTarget = this.ReserveStorageDeliveryTargets(storage, 1)[0] ?? null;
+        const target = itemTarget ?? storage.receivePivot ?? storage.node;
         const onArrived = () => {
-            const remainingPending = Math.max(
-                0,
-                (this.conveyorDeliveriesInFlight.get(storage) ?? 1) - 1,
-            );
-            if (remainingPending > 0) {
-                this.conveyorDeliveriesInFlight.set(storage, remainingPending);
-            } else {
-                this.conveyorDeliveriesInFlight.delete(storage);
-            }
             if (item?.isValid) {
                 item.destroy();
             }
-            storage.Receive(EItemType.GoldOre, 1);
+            if (itemTarget?.isValid) {
+                itemTarget.destroy();
+            }
+            this.CompleteStorageDelivery(storage);
+            storage.Receive(EItemType.GoldOre, 1, false);
         };
         if (this.flyService && item?.isValid) {
-            this.flyService.FlyExistingToNode(item, target, onArrived, 0.3, 1.2);
+            this.flyService.FlyExistingToNode(item, target, onArrived, 0.3, 1.2, !!itemTarget);
         } else {
             onArrived();
         }
     }
 
     private GetStorageAvailableCapacity(storage: StorageInteractor): number {
-        const pending = this.conveyorDeliveriesInFlight.get(storage) ?? 0;
+        const pending = this.storageDeliveriesInFlight.get(storage) ?? 0;
         return Math.max(0, storage.capacity - storage.Amount - pending);
+    }
+
+    private ReserveStorageDeliveryTargets(storage: StorageInteractor, amount: number): Array<Node | null> {
+        const safeAmount = Math.max(0, Math.floor(amount));
+        const pending = this.storageDeliveriesInFlight.get(storage) ?? 0;
+        if (safeAmount > 0) {
+            this.storageDeliveriesInFlight.set(storage, pending + safeAmount);
+        }
+
+        return Array.from(
+            { length: safeAmount },
+            (_, index) => storage.stackView?.CreateItemTarget(storage.Amount + pending + index) ?? null,
+        );
+    }
+
+    private CompleteStorageDelivery(storage: StorageInteractor): void {
+        const remaining = Math.max(0, (this.storageDeliveriesInFlight.get(storage) ?? 1) - 1);
+        if (remaining > 0) {
+            this.storageDeliveriesInFlight.set(storage, remaining);
+        } else {
+            this.storageDeliveriesInFlight.delete(storage);
+        }
     }
 
     private SetConveyorVisible(value: boolean): void {

@@ -73,16 +73,25 @@ export class SandCollectableOre extends Component {
         this.node.active = false;
         SoundManager.Instance?.Play(ESoundType.GetGoldNugget);
 
-        const complete = () => inventory.CommitReserved(this.resultItem, 1);
+        const stack = inventory.GetStackView(this.resultItem);
+        const itemTarget = stack?.CreateItemTarget(inventory.GetProjectedCount(this.resultItem) - 1) ?? null;
+        const target = itemTarget ?? this.flyTarget;
+        const complete = () => {
+            if (itemTarget?.isValid) {
+                itemTarget.destroy();
+            }
+            inventory.CommitReserved(this.resultItem, 1, false);
+        };
 
-        if (this.flyService && this.flyVisualPrefab && this.flyTarget) {
+        if (this.flyService && this.flyVisualPrefab && target) {
             const flyingItem = this.flyService.FlyPrefabToNode(
                 this.flyVisualPrefab,
                 start,
-                this.flyTarget,
+                target,
                 complete,
                 this.collectFlyDuration,
                 this.collectFlyArcHeight,
+                !!itemTarget,
             );
             if (!flyingItem) {
                 complete();

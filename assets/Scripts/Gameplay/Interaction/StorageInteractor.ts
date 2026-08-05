@@ -32,13 +32,13 @@ export class StorageInteractor extends Interactor {
         return itemType === this.acceptedItem && this.amount + amount <= this.capacity;
     }
 
-    public Receive(itemType: EItemType, amount: number = 1): boolean {
+    public Receive(itemType: EItemType, amount: number = 1, animate: boolean = true): boolean {
         if (!this.CanReceive(itemType, amount)) {
             return false;
         }
 
         this.amount += Math.max(0, amount);
-        this.stackView?.SetCount(this.amount);
+        this.stackView?.SetCount(this.amount, animate);
         this.onAmountChanged.Invoke(this.amount);
         return true;
     }

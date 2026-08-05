@@ -36,7 +36,7 @@ export class ItemStackView extends Component {
     }
 
     public get VisibleCount(): number {
-        return Math.min(this.count, this.maxVisibleItems);
+        return Math.min(this.count, this.GetMaxVisibleItems());
     }
 
     public get VisibleInventoryStackHeight(): number {
@@ -77,13 +77,13 @@ export class ItemStackView extends Component {
 
         const target = new Node(`ItemTarget_${index}`);
         this.root.addChild(target);
-        target.setPosition(this.GetItemPosition(Math.max(0, Math.floor(index))));
+        target.setPosition(this.GetItemPosition(this.GetVisibleIndex(index)));
         target.setScale(Vec3.ONE);
         return target;
     }
 
     public GetItemWorldPosition(index: number, out: Vec3 = new Vec3()): Vec3 {
-        const safeIndex = Math.max(0, Math.floor(index));
+        const safeIndex = this.GetVisibleIndex(index);
         const item = this.items[safeIndex];
         if (item?.activeInHierarchy) {
             return item.getWorldPosition(out);
@@ -94,6 +94,12 @@ export class ItemStackView extends Component {
         }
 
         return this.node.getWorldPosition(out);
+    }
+
+    public GetTopItemWorldPosition(removalOffset: number = 0, out: Vec3 = new Vec3()): Vec3 {
+        const countBeforeRemoval = Math.max(0, this.count - Math.max(0, Math.floor(removalOffset)));
+        const topIndex = Math.max(0, Math.min(countBeforeRemoval, this.GetMaxVisibleItems()) - 1);
+        return this.GetItemWorldPosition(topIndex, out);
     }
 
     private RefreshChangedItems(previousVisibleCount: number, animate: boolean): void {
@@ -157,6 +163,17 @@ export class ItemStackView extends Component {
         const row = this.columns <= 0 ? index : Math.floor(index / this.columns);
         const centeredColumn = column - (Math.max(1, this.columns) - 1) * 0.5;
         return new Vec3(centeredColumn * this.horizontalStep, row * this.verticalStep, 0);
+    }
+
+    private GetVisibleIndex(index: number): number {
+        return Math.min(
+            Math.max(0, Math.floor(index)),
+            this.GetMaxVisibleItems() - 1,
+        );
+    }
+
+    private GetMaxVisibleItems(): number {
+        return Math.max(1, Math.floor(this.maxVisibleItems));
     }
 
     public Add(amount: number = 1): void {
