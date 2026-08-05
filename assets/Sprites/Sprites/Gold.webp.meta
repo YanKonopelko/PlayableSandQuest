@@ -41,14 +41,14 @@
       "userData": {
         "trimThreshold": 1,
         "rotated": false,
-        "offsetX": -10,
-        "offsetY": 0,
-        "trimX": 12,
-        "trimY": 0,
-        "width": 1492,
-        "height": 1024,
-        "rawWidth": 1536,
-        "rawHeight": 1024,
+        "offsetX": 3.5,
+        "offsetY": 6.5,
+        "trimX": 94,
+        "trimY": 47,
+        "width": 203,
+        "height": 149,
+        "rawWidth": 384,
+        "rawHeight": 256,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -746,
-            -512,
+            -101.5,
+            -74.5,
             0,
-            746,
-            -512,
+            101.5,
+            -74.5,
             0,
-            -746,
-            512,
+            -101.5,
+            74.5,
             0,
-            746,
-            512,
+            101.5,
+            74.5,
             0
           ],
           "indexes": [
@@ -82,33 +82,33 @@
             3
           ],
           "uv": [
-            12,
-            1024,
-            1504,
-            1024,
-            12,
-            0,
-            1504,
-            0
+            94,
+            209,
+            297,
+            209,
+            94,
+            60,
+            297,
+            60
           ],
           "nuv": [
-            0.0078125,
-            0,
-            0.9791666666666666,
-            0,
-            0.0078125,
-            1,
-            0.9791666666666666,
-            1
+            0.24479166666666666,
+            0.234375,
+            0.7734375,
+            0.234375,
+            0.24479166666666666,
+            0.81640625,
+            0.7734375,
+            0.81640625
           ],
           "minPos": [
-            -746,
-            -512,
+            -101.5,
+            -74.5,
             0
           ],
           "maxPos": [
-            746,
-            512,
+            101.5,
+            74.5,
             0
           ]
         },
@@ -132,7 +132,7 @@
     "redirect": "7909bba1-1b2b-4bf7-82c4-243f495ca1b8@6c48a",
     "compressSettings": {
       "useCompressTexture": true,
-      "presetId": "56V4ss5UBIQ6U8cATmVkk4"
+      "presetId": "b3uuu1cQVG5JLfuk1szeqs"
     }
   }
 }

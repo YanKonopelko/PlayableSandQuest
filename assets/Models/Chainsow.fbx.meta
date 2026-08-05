@@ -18,8 +18,8 @@
         "magfilter": "linear",
         "mipfilter": "none",
         "anisotropy": 0,
-        "isUuid": false,
-        "imageUuidOrDatabaseUri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_normal.webp"
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "49c7e56f-e064-4d7f-a147-4fe1534a1380@f8654"
       },
       "ver": "1.0.22",
       "imported": true,
@@ -62,6 +62,46 @@
       ],
       "subMetas": {}
     },
+    "48b02": {
+      "importer": "gltf-embeded-image",
+      "uuid": "49c7e56f-e064-4d7f-a147-4fe1534a1380@48b02",
+      "displayName": "",
+      "id": "48b02",
+      "name": "base_color_texture.image",
+      "userData": {
+        "gltfIndex": 0,
+        "fixAlphaTransparencyArtifacts": true,
+        "hasAlpha": true,
+        "type": "texture"
+      },
+      "ver": "1.0.3",
+      "imported": true,
+      "files": [
+        ".json",
+        ".png"
+      ],
+      "subMetas": {}
+    },
+    "f8654": {
+      "importer": "gltf-embeded-image",
+      "uuid": "49c7e56f-e064-4d7f-a147-4fe1534a1380@f8654",
+      "displayName": "",
+      "id": "f8654",
+      "name": "normal_texture.image",
+      "userData": {
+        "gltfIndex": 1,
+        "fixAlphaTransparencyArtifacts": true,
+        "hasAlpha": true,
+        "type": "texture"
+      },
+      "ver": "1.0.3",
+      "imported": true,
+      "files": [
+        ".json",
+        ".png"
+      ],
+      "subMetas": {}
+    },
     "7d6ab": {
       "importer": "texture",
       "uuid": "49c7e56f-e064-4d7f-a147-4fe1534a1380@7d6ab",
@@ -76,7 +116,7 @@
         "mipfilter": "none",
         "anisotropy": 0,
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "0ef0dfd1-fd93-466c-bfcc-47c0ed5b7386"
+        "imageUuidOrDatabaseUri": "49c7e56f-e064-4d7f-a147-4fe1534a1380@48b02"
       },
       "ver": "1.0.22",
       "imported": true,
@@ -106,12 +146,11 @@
     "imageMetas": [
       {
         "name": "base_color_texture",
-        "remap": "0ef0dfd1-fd93-466c-bfcc-47c0ed5b7386",
-        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_basecolor.webp"
+        "uri": "49c7e56f-e064-4d7f-a147-4fe1534a1380@48b02"
       },
       {
         "name": "normal_texture",
-        "uri": "db://assets/Models/Chainsow.fbm/f6989d4a3faa84ac803259e3b252e5d9.fbx_normal.webp"
+        "uri": "49c7e56f-e064-4d7f-a147-4fe1534a1380@f8654"
       }
     ],
     "fbx": {
@@ -202,7 +241,7 @@
         "_props": [
           {
             "mainTexture": {
-              "__uuid__": "11064173-b0c1-43df-bafb-2e71f584657a@6c48a",
+              "__uuid__": "b1702757-5cad-4d8a-8f02-b275ae0b0115@6c48a",
               "__expectedType__": "cc.Texture2D"
             },
             "mainColor": {
