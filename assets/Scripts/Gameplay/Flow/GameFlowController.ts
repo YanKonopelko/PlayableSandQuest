@@ -213,6 +213,12 @@ export class GameFlowController extends Component {
     @property({ type: CCFloat, min: 0, tooltip: 'Delay between consecutive gold and storage-money flight starts.' })
     public transferItemStaggerDelay: number = 0.09;
 
+    @property({ type: CCFloat, min: 0.01, tooltip: 'Smallest delay between resource flights while the exchange has a large gold backlog.' })
+    public minimumExchangeItemTransferDelay: number = 0.01;
+
+    @property({ type: CCFloat, min: 0.01, tooltip: 'Smallest resource flight duration while the exchange has a large gold backlog.' })
+    public minimumExchangeItemFlyDuration: number = 0.16;
+
     @property({ type: CCFloat, min: 0.1, tooltip: 'Seconds for the first-money camera move to the upgrade shop.' })
     public upgradeShopCameraMoveDuration: number = 0.8;
 
@@ -265,6 +271,7 @@ export class GameFlowController extends Component {
     private upgradeShopRevealSequenceInProgress: boolean = false;
     private movementEnabledBeforeShopReveal: boolean = true;
     private joystickEnabledBeforeShopReveal: boolean = true;
+    private exchangeSpeedMultiplier: number = 1;
 
     protected start(): void {
         if (this.orcGoldStorage) {
@@ -570,6 +577,8 @@ export class GameFlowController extends Component {
         this.goldDepositInProgress = true;
         this.SetState(EGameFlowState.ExchangeGold);
         const deliveryTargets = this.ReserveStorageDeliveryTargets(storage, starts.length);
+        const depositSpeedMultiplier = this.GetExchangeSpeedMultiplier(storage.Amount + starts.length);
+        const staggerDelay = this.GetAcceleratedExchangeStaggerDelay(depositSpeedMultiplier);
         let arrived = 0;
         for (let i = 0; i < starts.length; i++) {
             const launch = () => {
@@ -598,7 +607,10 @@ export class GameFlowController extends Component {
                         starts[i],
                         target,
                         onArrived,
-                        0.35 + i * 0.02,
+                        this.GetAcceleratedExchangeFlightDuration(
+                            0.35 + i * 0.02,
+                            depositSpeedMultiplier,
+                        ),
                         this.flyService.defaultArcHeight,
                         !!itemTarget,
                     )
@@ -608,7 +620,7 @@ export class GameFlowController extends Component {
                     onArrived();
                 }
             };
-            const delay = i * Math.max(0, this.transferItemStaggerDelay);
+            const delay = i * staggerDelay;
             delay > 0 ? this.scheduleOnce(launch, delay) : launch();
         }
     }
@@ -637,6 +649,8 @@ export class GameFlowController extends Component {
             return false;
         }
 
+        this.exchangeSpeedMultiplier = this.GetExchangeSpeedMultiplier(available);
+        this.cartQueue.SetMovementSpeedMultiplier(this.exchangeSpeedMultiplier);
         this.exchangeInProgress = true;
         this.SetState(EGameFlowState.ExchangeGold);
         this.TransferStoredGoldToCart(amount);
@@ -685,7 +699,7 @@ export class GameFlowController extends Component {
             { length: amount },
             (_, index) => activeCart?.CreateGoldDeliveryTarget(index) ?? null,
         );
-        const staggerDelay = Math.max(0, this.transferItemStaggerDelay);
+        const staggerDelay = this.GetAcceleratedExchangeStaggerDelay(this.exchangeSpeedMultiplier);
         for (let i = 0; i < amount; i++) {
             const launchGold = () => {
                 const slotTarget = deliveryTargets[i];
@@ -703,7 +717,10 @@ export class GameFlowController extends Component {
                         startPositions[i] ?? fallbackStart,
                         flightTarget,
                         onGoldArrived,
-                        0.75 + i * 0.03,
+                        this.GetAcceleratedExchangeFlightDuration(
+                            0.75 + i * 0.03,
+                            this.exchangeSpeedMultiplier,
+                        ),
                         1.7,
                         !!slotTarget,
                     );
@@ -747,7 +764,7 @@ export class GameFlowController extends Component {
             }
         };
 
-        const staggerDelay = Math.max(0, this.transferItemStaggerDelay);
+        const staggerDelay = this.GetAcceleratedExchangeStaggerDelay(this.exchangeSpeedMultiplier);
         for (let i = 0; i < amount; i++) {
             const launchMoneyToStorage = () => {
                 const itemTarget = deliveryTargets[i];
@@ -764,7 +781,10 @@ export class GameFlowController extends Component {
                         start.clone(),
                         target,
                         onArrived,
-                        0.5 + i * 0.03,
+                        this.GetAcceleratedExchangeFlightDuration(
+                            0.5 + i * 0.03,
+                            this.exchangeSpeedMultiplier,
+                        ),
                         this.flyService.defaultArcHeight,
                         !!itemTarget,
                     )
@@ -797,6 +817,38 @@ export class GameFlowController extends Component {
 
         const hasMoneyToCollect = (this.moneyStorage?.Amount ?? 0) > 0;
         this.SetState(hasMoneyToCollect ? EGameFlowState.GoToStorage : EGameFlowState.GoToSand);
+    }
+
+    private GetExchangeSpeedMultiplier(goldAmount: number): number {
+        const goldPerCart = Math.max(1, this.cartQueue?.goldPerCart ?? 1);
+        const cartLoads = Math.max(1, Math.ceil(Math.max(0, goldAmount) / goldPerCart));
+        if (cartLoads >= 4) {
+            return 2;
+        }
+        if (cartLoads === 3) {
+            return 1.5;
+        }
+        if (cartLoads === 2) {
+            return 1.3;
+        }
+        return 1;
+    }
+
+    private GetAcceleratedExchangeStaggerDelay(speedMultiplier: number): number {
+        return Math.max(
+            Math.max(0, this.minimumExchangeItemTransferDelay),
+            Math.max(0, this.transferItemStaggerDelay) / Math.max(1, speedMultiplier),
+        );
+    }
+
+    private GetAcceleratedExchangeFlightDuration(
+        baseDuration: number,
+        speedMultiplier: number,
+    ): number {
+        return Math.max(
+            Math.max(0.01, this.minimumExchangeItemFlyDuration),
+            Math.max(0.01, baseDuration) / Math.max(1, speedMultiplier),
+        );
     }
 
     private OnActiveCartReady(_cart: CartUnit): void {

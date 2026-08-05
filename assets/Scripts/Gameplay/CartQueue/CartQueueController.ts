@@ -43,6 +43,7 @@ export class CartQueueController extends Component {
 
     private units: CartUnit[] = [];
     private activeCartReady: boolean = false;
+    private movementSpeedMultiplier: number = 1;
 
     public get ActiveCart(): CartUnit | null {
         return this.units.length > 0 ? this.units[0] : null;
@@ -64,6 +65,16 @@ export class CartQueueController extends Component {
 
         cart.ReceiveGold(amount);
         return true;
+    }
+
+    public SetMovementSpeedMultiplier(multiplier: number): void {
+        this.movementSpeedMultiplier = Number.isFinite(multiplier)
+            ? Math.max(1, multiplier)
+            : 1;
+
+        for (const unit of this.units) {
+            unit.SetMovementSpeedMultiplier(this.movementSpeedMultiplier);
+        }
     }
 
     private BuildInitialQueue(): void {
@@ -102,6 +113,7 @@ export class CartQueueController extends Component {
         }
 
         unit.requiredGold = this.goldPerCart;
+        unit.SetMovementSpeedMultiplier(this.movementSpeedMultiplier);
         unit.ResetCart();
         unit.onFilled.Subscribe(this.OnCartFilled, this);
         unit.onRouteFinished.Subscribe(this.OnCartRouteFinished, this);

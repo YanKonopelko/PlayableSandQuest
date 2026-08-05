@@ -79,6 +79,7 @@ export class CartUnit extends Component {
     private sceneCamera: Camera | null = null;
     private readonly cartBaseScale: Vec3 = new Vec3(1, 1, 1);
     private orcAnimation: PlayerAnimationController | null = null;
+    private movementSpeedMultiplier: number = 1;
 
     public get Gold(): number {
         return this.gold;
@@ -187,6 +188,12 @@ export class CartUnit extends Component {
         }
     }
 
+    public SetMovementSpeedMultiplier(multiplier: number): void {
+        this.movementSpeedMultiplier = Number.isFinite(multiplier)
+            ? Math.max(1, multiplier)
+            : 1;
+    }
+
     public MoveAlong(points: Node[]): void {
         if (this.moving) {
             return;
@@ -231,7 +238,10 @@ export class CartUnit extends Component {
 
     private TweenTo(targetPosition: Vec3, onComplete: () => void): void {
         const distance = Vec3.distance(this.node.worldPosition, targetPosition);
-        const duration = distance / Math.max(this.moveSpeed, 0.01);
+        const duration = distance / Math.max(
+            this.moveSpeed * this.movementSpeedMultiplier,
+            0.01,
+        );
 
         tween(this.node)
             .to(duration, { worldPosition: targetPosition }, { easing: 'linear' })
